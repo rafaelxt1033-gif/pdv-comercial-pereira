@@ -178,9 +178,17 @@
                 </div>
             </div>
 
-            <!-- ESTOQUE -->
+            <!-- ESTOQUE E IMPORTAÇÃO -->
             <div id="view-produtos" class="conteudo-view">
-                <h2>Gestão de Produtos</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Gestão de Produtos</h2>
+                    <div class="acoes-estoque">
+                        <input type="file" id="input-planilha-csv" accept=".csv" style="display: none;" onchange="processarPlanilha(event)" />
+                        <button type="button" class="btn-acao-nuvem" onclick="document.getElementById('input-planilha-csv').click()" style="background-color: #238636;">
+                            <i class="fa-solid fa-file-import"></i> Importar CSV
+                        </button>
+                    </div>
+                </div>
                 <table class="tabela-admin">
                     <thead><tr><th>Código</th><th>Produto</th><th>Precisão Decimal</th><th>Preço</th></tr></thead>
                     <tbody id="tabela-produtos-admin"></tbody>
@@ -232,7 +240,7 @@
                 <option value="Fiado">Fiado (Crediário)</option>
             </select>
 
-            <!-- MÓDULO DE FIADO (OCULTO POR PADRÃO) -->
+            <!-- MÓDULO DE FIADO -->
             <div id="area-cliente-fiado" style="display:none; margin-bottom: 15px; padding: 15px; background: #fefce8; border: 1px solid #fde047; border-radius: 4px;">
                 <label style="font-weight:bold; margin-bottom:5px; display:block; color: #854d0e;">Selecionar Cliente:</label>
                 <select id="cliente-fiado" class="metodo-pag" style="border-color: #fde047;" onchange="atualizarLimiteUi()">
@@ -250,8 +258,8 @@
     </div>
 
     <script>
-        // SANEAMENTO DA BASE DE DADOS E FRAÇÕES MATEMÁTICAS (COM NOVOS PRODUTOS)
-        let bdProdutos = [
+        // RECUPERAÇÃO DO ESTOQUE DA MEMÓRIA OU CARREGA O PADRÃO
+        let bdProdutos = JSON.parse(localStorage.getItem('cp_produtos')) || [
             { cod: '101', nome: 'Cimento CP II 50kg Votorantim', preco: 35.90, un: 'SC', precisao: 0 },
             { cod: '102', nome: 'Areia Média Lavada', preco: 85.00, un: 'M³', precisao: 2 },
             { cod: '103', nome: 'Brita Número 1', preco: 90.00, un: 'M³', precisao: 2 },
@@ -260,13 +268,9 @@
             { cod: '106', nome: 'Argamassa ACIII 20kg Quartzolit', preco: 28.50, un: 'SC', precisao: 0 },
             { cod: '107', nome: 'Tubo PVC Soldável 25mm (Água Fria)', preco: 4.50, un: 'UN', precisao: 0 },
             { cod: '108', nome: 'Prego 18x27 com cabeça', preco: 18.00, un: 'KG', precisao: 3 },
-            { cod: '109', nome: 'Telha Fibrocimento 2.44x1.10m 6mm', preco: 45.90, un: 'UN', precisao: 0 },
-            { cod: '110', nome: 'Mangueira de Jardim Trançada', preco: 3.20, un: 'MT', precisao: 2 },
-            { cod: '111', nome: 'Gesso em Pó', preco: 4.50, un: 'KG', precisao: 3 },
-            { cod: '112', nome: 'Cabo Rígido 10mm (Rolo 100m)', preco: 350.00, un: 'UN', precisao: 0 }
+            { cod: '109', nome: 'Telha Fibrocimento 2.44x1.10m 6mm', preco: 45.90, un: 'UN', precisao: 0 }
         ];
 
-        // MÓDULO DE GESTÃO DE CRÉDITO E LIMITES (FIADO)
         let bdClientes = JSON.parse(localStorage.getItem('cp_clientes')) || [
             { id: 1, nome: 'Construtora Alpha', limite: 5000.00, devendo: 0.00 },
             { id: 2, nome: 'Mestre Roberto (Pedreiro)', limite: 1500.00, devendo: 0.00 },
@@ -322,7 +326,7 @@
             const box = document.getElementById('box-selecao');
             if(!termo) { box.classList.remove('ativo'); produtoTemp = null; return; }
             
-            const prod = bdProdutos.find(p => p.cod === termo || p.nome.toLowerCase().includes(termo));
+            const prod = bdProdutos.find(p => p.cod == termo || p.nome.toLowerCase().includes(termo));
             if(prod) {
                 produtoTemp = prod; box.classList.add('ativo');
                 document.getElementById('sel-nome').innerText = `${prod.cod} - ${prod.nome}`;
@@ -345,7 +349,6 @@
 
         function adicionarAoCarrinho() {
             if(!produtoTemp) return;
-            
             const qtdInput = document.getElementById('sel-qtd').value;
             let qtd = parseFloat(qtdInput);
 
@@ -361,7 +364,6 @@
             }
 
             const totalItem = qtdFormatada * produtoTemp.preco;
-
             carrinho.push({ cod: produtoTemp.cod, nome: produtoTemp.nome, un: produtoTemp.un, preco: produtoTemp.preco, qtd: qtdFormatada, total: totalItem, precisao: produtoTemp.precisao });
 
             document.getElementById('busca-produto').value = ''; document.getElementById('box-selecao').classList.remove('ativo'); produtoTemp = null;
@@ -385,15 +387,14 @@
             document.getElementById('total-venda').innerText = formatarMoeda(somaTotal);
         }
 
-        // LÓGICA DO MODAL DE PAGAMENTO E FIADO
         function prepararPagamento(isFiscal) {
             if(carrinho.length === 0) return alert("Carrinho Vazio!");
             tipoVendaAtualIsFiscal = isFiscal;
             document.getElementById('titulo-modal-pag').innerText = isFiscal ? "Emitir NFC-e" : "Emitir Nota Livre";
             document.getElementById('titulo-modal-pag').style.color = isFiscal ? "var(--fiscal)" : "var(--azul-marca)";
             document.getElementById('modal-total').innerText = document.getElementById('total-venda').innerText;
-            document.getElementById('forma-pag').value = 'Dinheiro'; // Reseta o select
-            verificarModoFiado(); // Força a checagem da interface
+            document.getElementById('forma-pag').value = 'Dinheiro'; 
+            verificarModoFiado(); 
             document.getElementById('modal-pagamento').classList.add('ativa');
         }
 
@@ -425,25 +426,18 @@
             const total = carrinho.reduce((a, c) => a + c.total, 0);
             let nomeClienteFiado = null;
 
-            // VALIDAÇÃO DE RISCO: MÓDULO DE FIADO
             if(formaPag === 'Fiado') {
                 const idCliente = parseInt(document.getElementById('cliente-fiado').value);
                 if(!idCliente) return alert("Erro: Selecione um cliente cadastrado para vender no crediário.");
-                
                 const cliente = bdClientes.find(x => x.id === idCliente);
                 const disponivel = cliente.limite - cliente.devendo;
+                if(total > disponivel) return alert(`BLOQUEIO DE CRÉDITO: A venda excede o limite disponível de ${formatarMoeda(disponivel)} do cliente ${cliente.nome}.`);
                 
-                if(total > disponivel) {
-                    return alert(`BLOQUEIO DE CRÉDITO: A venda excede o limite disponível de ${formatarMoeda(disponivel)} do cliente ${cliente.nome}.`);
-                }
-                
-                // Aprovação e atualização de dívida
                 cliente.devendo += total;
                 nomeClienteFiado = cliente.nome;
                 localStorage.setItem('cp_clientes', JSON.stringify(bdClientes));
             }
 
-            // GERAÇÃO DO PEDIDO
             const venda = {
                 id: Math.floor(Math.random() * 90000) + 10000,
                 data: new Date().toLocaleString('pt-BR'),
@@ -460,8 +454,6 @@
             carrinho = []; atualizarCarrinhoUi();
             document.getElementById('modal-pagamento').classList.remove('ativa');
             renderizarTabelas();
-            
-            // PROTOCOLO DE SINCRONIZAÇÃO AUTOMÁTICA
             sincronizarGitHubSilencioso();
         }
 
@@ -489,21 +481,67 @@
             setTimeout(() => window.print(), 100);
         }
 
+        // INTEGRAÇÃO: LÓGICA DE IMPORTAÇÃO DE PLANILHA CSV
+        function processarPlanilha(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const texto = e.target.result;
+                const linhas = texto.split('\n');
+                let adicionados = 0;
+
+                for (let i = 1; i < linhas.length; i++) {
+                    const linha = linhas[i].trim();
+                    if (!linha) continue;
+
+                    const colunas = linha.includes(';') ? linha.split(';') : linha.split(',');
+
+                    if (colunas.length >= 3) {
+                        const codigo = colunas[0].trim();
+                        const nomeProduto = colunas[1].trim();
+                        const preco = parseFloat(colunas[2].trim().replace(',', '.'));
+
+                        const { precisao, un } = deduzirPrecisaoEUnidade(nomeProduto);
+
+                        const idx = bdProdutos.findIndex(p => p.cod == codigo);
+                        if (idx > -1) {
+                            bdProdutos[idx] = { cod: codigo, nome: nomeProduto, preco: preco, un: un, precisao: precisao };
+                        } else {
+                            bdProdutos.push({ cod: codigo, nome: nomeProduto, preco: preco, un: un, precisao: precisao });
+                        }
+                        adicionados++;
+                    }
+                }
+
+                // Salva no cache local imediatamente após a importação
+                localStorage.setItem('cp_produtos', JSON.stringify(bdProdutos));
+                renderizarTabelas();
+                alert(`✅ ${adicionados} produtos importados com sucesso!\nVá na aba GitHub Nuvem para salvar as alterações permanentemente.`);
+                event.target.value = ''; // Limpa o input
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        function deduzirPrecisaoEUnidade(nome) {
+            const termo = nome.toLowerCase();
+            if (termo.includes('areia') || termo.includes('brita') || termo.includes('fio') || termo.includes('cabo') || termo.includes('mangueira')) {
+                return { precisao: 2, un: termo.includes('areia') || termo.includes('brita') ? 'M³' : 'MT' };
+            } else if (termo.includes('prego') || termo.includes('gesso') || termo.includes('parafuso')) {
+                return { precisao: 3, un: 'KG' };
+            }
+            return { precisao: 0, un: 'UN' };
+        }
+
         function baixarXMLFiscal() {
             const notasFiscais = historicoVendas.filter(v => v.fiscal);
             if(notasFiscais.length === 0) return alert("Nenhuma NFC-e gerada!");
-            
             let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<FechamentoCaixa>\n  <Empresa>Comercial Pereira</Empresa>\n  <NFCe>\n`;
-            notasFiscais.forEach(n => {
-                xml += `    <Nota id="${n.id}">\n      <Data>${n.data}</Data>\n      <Valor>${n.valor.toFixed(2)}</Valor>\n      <Pagamento>${n.pagamento}</Pagamento>\n    </Nota>\n`;
-            });
+            notasFiscais.forEach(n => { xml += `    <Nota id="${n.id}">\n      <Data>${n.data}</Data>\n      <Valor>${n.valor.toFixed(2)}</Valor>\n      <Pagamento>${n.pagamento}</Pagamento>\n    </Nota>\n`; });
             xml += `  </NFCe>\n</FechamentoCaixa>`;
-            
             let blob = new Blob([xml], { type: 'text/xml' });
-            let link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'XML_Contador_Comercial_Pereira.xml';
-            link.click();
+            let link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'XML_Contador_Comercial_Pereira.xml'; link.click();
         }
 
         function renderizarTabelas() {
@@ -524,10 +562,10 @@
             const repo = document.getElementById('gh-repo').value;
             const token = document.getElementById('gh-token').value;
             localStorage.setItem('gh_repo', repo); localStorage.setItem('gh_token', token);
-            alert("Credenciais GitHub do João salvas!");
+            alert("Credenciais GitHub salvas! Iniciando sincronização...");
+            sincronizarGitHubSilencioso();
         }
 
-        // PROTOCOLO DE SINCRONIZAÇÃO AUTOMATED SYNC (GIT PUSH VIA API)
         async function sincronizarGitHubSilencioso() {
             const repo = localStorage.getItem('gh_repo'); const token = localStorage.getItem('gh_token');
             if(!repo || !token) return;
@@ -536,15 +574,9 @@
                 let res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
                 let sha = res.ok ? (await res.json()).sha : "";
                 
-                // O pacote consolidado envia todo o ecossistema atualizado (Produtos, Vendas e Clientes)
-                let pacoteConsolidado = {
-                    estoque: bdProdutos,
-                    vendas: historicoVendas,
-                    carteira_clientes: bdClientes
-                };
-
+                let pacoteConsolidado = { estoque: bdProdutos, vendas: historicoVendas, carteira_clientes: bdClientes };
                 let body = { 
-                    message: "Sync Automática de Retaguarda (Vendas e Crédito)", 
+                    message: "Sync Automática (Estoque Atualizado via CSV)", 
                     content: btoa(unescape(encodeURIComponent(JSON.stringify(pacoteConsolidado, null, 2)))),
                     branch: "main"
                 };
