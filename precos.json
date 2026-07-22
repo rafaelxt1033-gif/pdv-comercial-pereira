@@ -1,0 +1,30 @@
+{
+  "789123456001": {
+    "nome": "CIMENTO CP II 50KG",
+    "preco": 34.9
+  },
+  "789123456002": {
+    "nome": "TIJOLO 8 FUROS (MILHEIRO)",
+    "preco": 650
+  },
+  "789123456003": {
+    "nome": "TUBO PVC ESGOTO 100MM",
+    "preco": 45.5
+  },
+  "789123456004": {
+    "nome": "TINTA ACRILICA BRANCA 18L",
+    "preco": 189.9
+  },
+  "789123456005": {
+    "nome": "PREGO 18X27 (KG)",
+    "preco": 18.5
+  },
+  "789123456006": {
+    "nome": "ARGAMASSA ACII 20KG",
+    "preco": 22
+  },
+  "789123456007": {
+    "nome": "FIO COBRE 2.5MM (METRO)",
+    "preco": 2.5
+  }
+}
