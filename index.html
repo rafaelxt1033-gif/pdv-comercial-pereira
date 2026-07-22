@@ -3,627 +3,628 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comercial Pereira - Sistema PDV Nuvem</title>
+    <title>Comercial João - Materiais de Construção</title>
+    <!-- Bibliotecas e Ícones -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root {
-            --azul-marca: #0A2254; 
-            --amarelo-marca: #FFF200; 
-            --amarelo-hover: #e6d900;
-            --texto-claro: #ffffff;
-            --texto-escuro: #333333;
-            --fundo-cinza: #f8fafc;
-            --borda: #cbd5e1;
-            --sucesso: #10b981;
-            --alerta: #f59e0b;
-            --erro: #ef4444;
-            --fiscal: #8b5cf6;
+        /* ================= PALETA INDUSTRIAL (MATERIAL DE CONSTRUÇÃO) ================= */
+        :root { 
+            --primaria: #ea580c; /* Laranja Forte */
+            --secundaria: #334155; /* Cinza Chumbo */
+            --sucesso: #16a34a; /* Verde Sucesso */
+            --alerta: #eab308; /* Amarelo Construção */
+            --erro: #dc2626; 
+            --fundo: #f8fafc; 
+            --texto: #0f172a; 
+            --fiscal: #4f46e5; 
             --whatsapp: #25D366;
+            --whatsapp-hover: #128C7E;
         }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: var(--fundo-cinza); color: var(--texto-escuro); overflow-x: hidden; }
-
-        .tela { display: none; width: 100vw; height: 100vh; }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--fundo); color: var(--texto); height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        
+        .tela { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; }
         .tela.ativa { display: flex; }
-
-        /* TELA DE LOGIN */
-        #tela-login { background-color: var(--azul-marca); justify-content: center; align-items: center; flex-direction: column; }
-        .login-box { background: var(--texto-claro); padding: 40px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; }
-        .logo-login { font-size: 26px; font-weight: 900; color: var(--azul-marca); margin-bottom: 5px; text-transform: uppercase; }
-        .logo-login span { color: var(--amarelo-marca); text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
-        .info-proprietario { font-size: 12px; color: #64748b; margin-bottom: 25px; font-weight: bold; }
+        
+        .login-wrapper { background: linear-gradient(135deg, #1e293b, #0f172a); justify-content: center; align-items: center; }
+        .login-box { background: white; padding: 40px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); text-align: center; border-top: 6px solid var(--primaria); }
         .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 14px; }
-        .input-group input { width: 100%; padding: 12px; border: 1px solid var(--borda); border-radius: 4px; font-size: 16px; outline: none; }
-        .btn-login { width: 100%; padding: 14px; background-color: var(--amarelo-marca); color: var(--azul-marca); border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn-login:hover { background-color: var(--amarelo-hover); }
-
-        /* PUSH MENU */
-        #tela-app { flex-direction: row; }
-        #sidebar { width: 250px; background-color: var(--azul-marca); color: var(--texto-claro); display: flex; flex-direction: column; transition: 0.3s; z-index: 1000; }
-        #sidebar.fechado { transform: translateX(-250px); position: absolute; height: 100%; }
+        .input-group label { display: block; font-weight: 600; margin-bottom: 6px; color: #475569; font-size: 14px; }
+        .input-group input, .input-group select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; outline: none; }
+        .btn-universal { width: 100%; padding: 15px; background: var(--primaria); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-universal:hover { filter: brightness(1.1); transform: translateY(-2px); }
         
-        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .sidebar-header h2 { color: var(--amarelo-marca); font-size: 20px; font-weight: 900; }
-        .nav-links { list-style: none; padding: 20px 0; flex-grow: 1; }
-        .nav-links li { padding: 15px 20px; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; display: flex; align-items: center; gap: 15px; }
-        .nav-links li:hover, .nav-links li.ativo { background-color: rgba(255,255,255,0.05); border-left-color: var(--amarelo-marca); color: var(--amarelo-marca); }
-        .sidebar-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
-
-        /* CONTEÚDO */
-        #main-content { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background: var(--fundo-cinza); }
-        header { background: var(--texto-claro); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .btn-toggle { background: transparent; border: none; font-size: 24px; color: var(--azul-marca); cursor: pointer; }
-        .conteudo-view { padding: 20px; flex-grow: 1; overflow-y: auto; display: none; }
-        .conteudo-view.ativa { display: block; }
-
-        /* CAIXA (PDV) */
-        .pdv-grid { display: grid; grid-template-columns: 6fr 4fr; gap: 20px; height: 100%; }
-        .painel-box { background: var(--texto-claro); padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 15px; }
-        .busca-container input { width: 100%; padding: 15px; font-size: 18px; border: 2px solid var(--borda); border-radius: 4px; outline: none; }
+        .top-bar { background: var(--secundaria); color: white; padding: 0 25px; height: 65px; display: flex; justify-content: space-between; align-items: center; width: 100%; border-bottom: 4px solid var(--primaria); }
+        .pdv-container { display: flex; width: 100%; height: calc(100% - 65px); background: white; }
+        .cupom-area { width: 45%; background: white; padding: 30px; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+        .cupom-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 40px; font-weight: 600; padding-bottom: 12px; border-bottom: 2px solid var(--secundaria); font-size: 14px; }
+        .produtos-lista { flex-grow: 1; overflow-y: auto; margin-top: 10px; }
+        .item-cupom { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 40px; padding: 10px 0; border-bottom: 1px dashed #e2e8f0; font-size: 15px; align-items: center; }
+        .badge-unidade { font-size: 11px; background: #e2e8f0; color: #475569; padding: 2px 4px; border-radius: 4px; margin-left: 4px; font-weight: bold; }
+        .btn-remover { color: var(--erro); background: transparent; border: none; cursor: pointer; font-size: 16px; }
         
-        .produto-selecionado { background: var(--fundo-cinza); padding: 15px; border-radius: 4px; border-left: 5px solid var(--azul-marca); display: none; }
-        .produto-selecionado.ativo { display: block; }
-        .linha-insercao { display: flex; gap: 15px; align-items: flex-end; }
-        .linha-insercao .campo { flex: 1; }
-        .linha-insercao label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; color: #64748b; }
-        .linha-insercao input { width: 100%; padding: 12px; font-size: 18px; border: 1px solid var(--borda); border-radius: 4px; }
-        .btn-adicionar { background: var(--sucesso); color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; height: 47px; }
-
-        .lista-carrinho { flex-grow: 1; overflow-y: auto; margin-bottom: 10px; border-bottom: 2px solid var(--borda); padding-bottom: 10px; min-height: 200px; }
-        .item-carrinho { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed var(--borda); }
-        .btn-remover { color: var(--erro); background: none; border: none; cursor: pointer; font-size: 18px; }
+        .total-box { 
+            background: #ffffff; color: var(--primaria); padding: 25px; border-radius: 12px; text-align: center; margin-top: 20px; border: 4px solid var(--primaria);
+            box-shadow: 0 4px 15px rgba(234, 88, 12, 0.15);
+        }
+        .total-box h3 { font-size: 16px; letter-spacing: 1px; margin-bottom: 5px; font-weight: 800; color: var(--secundaria); }
+        .total-box p { font-size: 42px; font-weight: 900; }
         
-        .totais-caixa { background: var(--azul-marca); color: var(--texto-claro); padding: 20px; border-radius: 8px; text-align: right; margin-bottom: 15px; }
-        .totais-caixa h2 { font-size: 36px; color: var(--amarelo-marca); }
-
-        .btn-finalizar-livre { background: var(--sucesso); color: white; width: 100%; padding: 15px; font-size: 16px; font-weight: 900; border: none; border-radius: 4px; cursor: pointer; margin-bottom: 10px; }
-        .btn-finalizar-fiscal { background: var(--fiscal); color: white; width: 100%; padding: 15px; font-size: 16px; font-weight: 900; border: none; border-radius: 4px; cursor: pointer; }
-
-        /* MODAL PAGAMENTO */
-        .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; }
+        .operacao-area { width: 55%; padding: 30px; display: flex; flex-direction: column; background: #f8fafc; justify-content: space-between; }
+        .terminal-log { background: #0f172a; color: #38bdf8; padding: 15px; border-radius: 8px; height: 110px; overflow-y: auto; font-family: monospace; font-size: 13px; margin-bottom: 15px; border-left: 4px solid var(--alerta); }
+        .area-balanca { background: #f1f5f9; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; gap: 10px; align-items: center; border: 1px solid #cbd5e1; }
+        .area-balanca input { padding: 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; outline: none; }
+        .input-codigo { width: 100%; padding: 22px; font-size: 38px; text-align: center; border: 3px solid var(--primaria); border-radius: 12px; outline: none; font-weight: bold; }
+        .dropdown-busca { display: none; position: absolute; left: 0; width: 100%; background: white; border: 2px solid var(--secundaria); border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 999; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .opcao-busca { padding: 14px; cursor: pointer; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; }
+        .opcao-busca:hover, .opcao-busca.selecionada { background: #fff7ed; color: var(--primaria); }
+        
+        .fechamento-painel { 
+            background: var(--secundaria); 
+            padding: 25px; 
+            border-radius: 12px; 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-bottom: 6px solid var(--primaria);
+        }
+        .fechamento-painel label { 
+            font-size: 17px !important; 
+            font-weight: 900 !important; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            display: block;
+            margin-bottom: 8px;
+            color: white;
+        }
+        .label-pagamento { color: #facc15 !important; } 
+        .label-recebido { color: #4ade80 !important; }  
+        
+        .fechamento-painel input, .fechamento-painel select { 
+            background: #1e293b !important; 
+            color: #ffffff !important; 
+            border: 3px solid #64748b !important; 
+            font-size: 28px !important; 
+            font-weight: 900 !important; 
+            padding: 16px !important;
+            border-radius: 10px !important;
+        }
+        .fechamento-painel input:focus, .fechamento-painel select:focus { border-color: var(--primaria) !important; }
+        #box-troco { color: #38bdf8 !important; font-size: 36px !important; text-shadow: 0 2px 8px rgba(0,0,0,0.8); font-weight: 900; }
+        
+        .dashboard-area { padding: 30px; background: #f1f5f9; width: 100%; height: calc(100% - 65px); overflow-y: auto; }
+        .tabela-dados { width: 100%; border-collapse: collapse; background: white; margin-top: 10px;}
+        .tabela-dados th, .tabela-dados td { padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: left; }
+        .modal-bg { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal-bg.ativo { display: flex; }
-        .modal-card { background: white; padding: 30px; border-radius: 8px; width: 400px; }
-        .metodo-pag { width: 100%; padding: 12px; font-size: 16px; margin-bottom: 15px; border: 1px solid var(--borda); border-radius: 4px; }
-        .botoes-modal { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-cancelar { flex: 1; padding: 12px; border: none; background: #ccc; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-confirmar { flex: 1; padding: 12px; border: none; background: var(--azul-marca); color: var(--amarelo-marca); border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .modal-card { background: white; padding: 30px; border-radius: 12px; width: 100%; max-width: 440px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); border-top: 5px solid var(--primaria); }
 
-        /* TABELAS ADM */
-        .tabela-admin { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; margin-top: 15px; }
-        .tabela-admin th, .tabela-admin td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--borda); }
-        .tabela-admin th { background: var(--azul-marca); color: white; font-size: 13px; text-transform: uppercase; }
+        .container-faturamento-olho { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 5px; }
+        .btn-olho-faturamento { background: transparent; border: none; cursor: pointer; font-size: 26px; display: flex; align-items: center; justify-content: center; padding: 5px; border-radius: 50%; transition: background 0.2s; }
+        .btn-olho-faturamento:hover { background: rgba(0, 0, 0, 0.05); }
 
-        .badge-fiscal { background: var(--fiscal); color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
-        .badge-livre { background: #94a3b8; color: white; padding: 3px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
-        
-        .btn-acao-nuvem { background: var(--sucesso); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-        .btn-acao-xml { background: var(--fiscal); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-
-        /* WIDGET SUPORTE */
-        #suporte-widget { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
-        .btn-suporte-flutuante { background-color: var(--whatsapp); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform 0.2s; }
-        .btn-suporte-flutuante:hover { transform: scale(1.05); }
-        #suporte-menu { display: none; position: absolute; bottom: 70px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 240px; padding: 15px; border: 1px solid var(--borda); }
-        .suporte-titulo { margin: 0 0 12px 0; font-size: 14px; font-weight: bold; color: var(--azul-marca); text-align: center; border-bottom: 2px solid var(--borda); padding-bottom: 8px; }
-        .link-suporte { display: flex; align-items: center; text-decoration: none; color: var(--texto-escuro); padding: 10px; margin-bottom: 8px; border-radius: 6px; background: var(--fundo-cinza); font-size: 14px; transition: background 0.2s; border: 1px solid transparent; }
-        .link-suporte:hover { background: #e2e8f0; border-color: var(--borda); }
-        .link-suporte i { color: var(--whatsapp); font-size: 18px; margin-right: 10px; }
+        /* WIDGET SUPORTE MAVYC */
+        .suporte-widget { position: fixed; bottom: 25px; right: 25px; z-index: 1999; }
+        .btn-suporte-float { background-color: var(--whatsapp); color: white; width: 60px; height: 60px; border-radius: 50%; border: none; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); cursor: pointer; transition: transform 0.3s; }
+        .btn-suporte-float:hover { transform: scale(1.1); }
+        .menu-suporte { display: none; position: absolute; bottom: 75px; right: 0; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 260px; border: 1px solid #e2e8f0; }
+        .menu-suporte.ativo { display: block; animation: subirMenu 0.3s ease; }
+        @keyframes subirMenu { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .titulo-suporte { font-size: 14px; color: var(--secundaria); margin-bottom: 12px; text-align: center; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+        .link-atendente { display: flex; align-items: center; gap: 12px; padding: 10px; text-decoration: none; color: #333; border-radius: 8px; transition: background 0.2s; margin-bottom: 8px; background: #f8fafc; }
+        .link-atendente:hover { background: #e0f2fe; }
+        .link-atendente i { font-size: 26px; color: var(--whatsapp); }
+        .info-atendente span { display: block; font-size: 14px; font-weight: bold; }
+        .info-atendente small { font-size: 11.5px; color: #64748b; }
 
         @media print {
-            body * { visibility: hidden; }
-            #recibo-impressao, #recibo-impressao * { visibility: visible; }
-            #recibo-impressao { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; color: #000; }
+            body * { visibility: hidden; display: none !important; }
+            #recibo-impressao, #recibo-impressao * { visibility: visible; display: block !important; }
+            #recibo-impressao { position: absolute; left: 0; top: 0; width: 100%; max-width: 80mm; margin: 0; padding: 0 2mm; font-family: Arial, Helvetica, sans-serif !important; color: #000 !important; font-weight: bold !important; background: white; font-size: 12px; line-height: 1.25; }
+            .txt-centro { text-align: center; } .txt-direita { text-align: right; }
+            .linha-tracejada { border-top: 1px dashed #000; margin: 4px 0; width: 100%; }
+            .flex-space { display: flex; justify-content: space-between; }
+            #qrcode-recibo { margin: 8px auto 0 auto; display: flex; justify-content: center; }
+            #qrcode-recibo img { width: 130px; height: 130px; }
+            @page { margin: 0; }
         }
     </style>
 </head>
 <body>
 
-    <!-- 1. LOGIN -->
-    <div id="tela-login" class="tela ativa">
+    <div id="tela-login" class="tela ativa login-wrapper">
         <div class="login-box">
-            <div class="logo-login">Comercial<br><span>Pereira</span></div>
-            <div class="info-proprietario">Sistema Oficial | Gestão: João</div>
+            <h2 style="color: var(--primaria); margin-bottom: 5px;">Comercial João</h2>
+            <p style="color: #64748b; margin-bottom: 20px; font-size: 14px; font-weight: 600;">MATERIAIS DE CONSTRUÇÃO</p>
             <div class="input-group">
                 <label>Usuário</label>
-                <input type="text" id="login-user" placeholder="joao ou caixa">
+                <input type="text" id="login-usuario" placeholder="caixa ou joao">
             </div>
             <div class="input-group">
                 <label>Senha</label>
-                <input type="password" id="login-pass" placeholder="••••••••" onkeypress="if(event.key === 'Enter') fazerLogin()">
+                <input type="password" id="login-senha" placeholder="••••••••" onkeypress="if(event.key === 'Enter') fazerLogin()">
             </div>
-            <button class="btn-login" onclick="fazerLogin()">Acessar Sistema</button>
+            <button class="btn-universal" onclick="fazerLogin()">Acessar PDV</button>
         </div>
     </div>
 
-    <!-- 2. SISTEMA -->
-    <div id="tela-app" class="tela">
-        
-        <!-- SIDEBAR PUSH -->
-        <aside id="sidebar">
-            <div class="sidebar-header">
-                <h2>C. PEREIRA</h2>
-                <p>Gestão & PDV</p>
+    <div id="tela-pdv" class="tela">
+        <div class="top-bar">
+            <div><strong>CAIXA 01</strong> | Operador: <span id="caixa-nome-status">João</span></div>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-universal" onclick="abrirModalBusca()" style="background: var(--sucesso); padding: 8px; width: auto;">Cons. Preço</button>
+                <button class="btn-universal" onclick="abrirModalPreco()" style="background: #64748b; padding: 8px; width: auto;">Mudar Preço</button>
+                <button class="btn-universal" id="btn-painel-atalho" onclick="mostrarTela('tela-adm')" style="background: var(--alerta); color: #333; padding: 8px; display: none; width: auto;">Painel ADM</button>
+                <button class="btn-universal" onclick="cancelarCupom()" style="background: var(--erro); padding: 8px; width: auto;">Cancelar Venda</button>
+                <button class="btn-universal" onclick="sair()" style="background: #0f172a; padding: 8px; width: auto;">Sair</button>
             </div>
-            <ul class="nav-links">
-                <li class="ativo" onclick="mudarView('view-caixa', this)"><i class="fa-solid fa-cash-register"></i> Caixa Livre</li>
-                <li onclick="mudarView('view-produtos', this)"><i class="fa-solid fa-boxes-stacked"></i> Estoque</li>
-                <li onclick="mudarView('view-vendas', this)"><i class="fa-solid fa-chart-line"></i> Relatório / XML</li>
-                <li onclick="mudarView('view-nuvem', this)"><i class="fa-solid fa-cloud"></i> GitHub Nuvem</li>
-            </ul>
-            <div class="sidebar-footer" onclick="sairSistema()"><i class="fa-solid fa-right-from-bracket"></i> Sair</div>
-        </aside>
-
-        <main id="main-content">
-            <header>
-                <button class="btn-toggle" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
-                <div style="font-weight: bold; color: var(--azul-marca);">Operador: <span id="nome-operador">João</span></div>
-            </header>
-
-            <!-- CAIXA PDV -->
-            <div id="view-caixa" class="conteudo-view ativa">
-                <div class="pdv-grid">
-                    <div class="painel-box">
-                        <div class="busca-container">
-                            <input type="text" id="busca-produto" placeholder="Buscar Material ou Bipe o Código..." oninput="pesquisarProduto(this.value)" autocomplete="off">
-                        </div>
-                        
-                        <div id="box-selecao" class="produto-selecionado">
-                            <h3 id="sel-nome">Nenhum produto</h3>
-                            <div class="linha-insercao">
-                                <div class="campo"><label>Preço</label><input type="text" id="sel-preco" readonly disabled></div>
-                                <div class="campo"><label id="label-qtd">Quantidade</label><input type="number" id="sel-qtd" value="1" onkeyup="if(event.key === 'Enter') adicionarAoCarrinho()"></div>
-                                <button class="btn-adicionar" onclick="adicionarAoCarrinho()"><i class="fa-solid fa-plus"></i></button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="painel-box">
-                        <div class="lista-carrinho" id="lista-carrinho"></div>
-                        <div class="totais-caixa"><p>TOTAL</p><h2 id="total-venda">R$ 0,00</h2></div>
-                        <button class="btn-finalizar-livre" onclick="prepararPagamento(false)">Finalizar Venda - NOTA LIVRE (F2)</button>
-                        <button class="btn-finalizar-fiscal" onclick="prepararPagamento(true)">Finalizar Venda - NFC-e (F4)</button>
+        </div>
+        <div class="pdv-container">
+            <div class="cupom-area">
+                <div class="cupom-header"><span>Item</span><span style="text-align:center;">Qtd/Medida</span><span style="text-align:right;">Unit</span><span style="text-align:right;">Total</span><span></span></div>
+                <div class="produtos-lista" id="lista-cupom"></div>
+                <div class="total-box"><h3>TOTAL A PAGAR</h3><p>R$ <span id="valor-total">0.00</span></p></div>
+            </div>
+            <div class="operacao-area">
+                <div class="terminal-log" id="log-sistema"><div>[SISTEMA MAVYC] Terminal de vendas pronto.</div></div>
+                
+                <div class="area-balanca">
+                    <span style="font-size: 24px;">📏</span>
+                    <input type="number" id="peso-balanca" placeholder="Fração (Metros/L/Kg)" style="width: 170px;" step="0.001">
+                    <div style="position: relative; flex: 1;">
+                        <input type="text" id="codigo-balanca" placeholder="Tubo, Areia, Tinta..." style="width: 100%;" oninput="filtrarNomeBalanca(this.value)" onkeydown="navegSugestoesBalanca(event)" autocomplete="off">
+                        <div id="dropdown-balanca" class="dropdown-busca" style="top: 100%; bottom: auto; margin-top: 5px;"></div>
                     </div>
                 </div>
-            </div>
 
-            <!-- ESTOQUE E IMPORTAÇÃO -->
-            <div id="view-produtos" class="conteudo-view">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>Gestão de Produtos</h2>
-                    <div class="acoes-estoque">
-                        <input type="file" id="input-planilha-csv" accept=".csv" style="display: none;" onchange="processarPlanilha(event)" />
-                        <button type="button" class="btn-acao-nuvem" onclick="document.getElementById('input-planilha-csv').click()" style="background-color: #238636;">
-                            <i class="fa-solid fa-file-import"></i> Importar CSV
-                        </button>
+                <div style="position: relative; display: flex; gap: 8px;">
+                    <input type="number" id="input-qtd-manual" value="1" style="width: 80px; text-align: center; font-size: 24px; border: 3px solid var(--secundaria); border-radius: 12px; font-weight: bold;" onkeydown="pularDaUnidadeProBipe(event)">
+                    <div style="position: relative; flex: 1;">
+                        <div id="dropdown-sugestoes" class="dropdown-busca" style="bottom: 100%; margin-bottom: 5px; width: 100%;"></div>
+                        <input type="text" class="input-codigo" id="codigo-barras" placeholder="Bipe ou digite o código..." oninput="filtrarPorNome(this.value)" onkeydown="navegarSugestoes(event)" autocomplete="off">
                     </div>
                 </div>
-                <table class="tabela-admin">
-                    <thead><tr><th>Código</th><th>Produto</th><th>Precisão Decimal</th><th>Preço</th></tr></thead>
-                    <tbody id="tabela-produtos-admin"></tbody>
-                </table>
-            </div>
-
-            <!-- VENDAS E XML -->
-            <div id="view-vendas" class="conteudo-view">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>Relatório de Operações</h2>
-                    <button class="btn-acao-xml" onclick="baixarXMLFiscal()"><i class="fa-solid fa-file-code"></i> Baixar XML Contador</button>
-                </div>
-                <table class="tabela-admin">
-                    <thead><tr><th>Tipo</th><th>Nº Pedido</th><th>Data</th><th>Pagamento</th><th>Valor</th></tr></thead>
-                    <tbody id="tabela-vendas"></tbody>
-                </table>
-            </div>
-
-            <!-- NUVEM GITHUB -->
-            <div id="view-nuvem" class="conteudo-view">
-                <h2>Configuração GitHub (Proprietário)</h2>
-                <div class="painel-box" style="max-width: 500px; margin-top: 15px;">
-                    <div class="input-group">
-                        <label>Repositório (Ex: joao/comercial-pereira-db)</label>
-                        <input type="text" id="gh-repo" placeholder="usuario/repositorio">
+                
+                <div class="fechamento-painel">
+                    <div class="input-group" style="margin: 0;">
+                        <label class="label-pagamento">Forma de Pagamento (F3)</label>
+                        <select id="forma-pagamento"><option>Dinheiro</option><option>PIX</option><option>Cartão de Crédito</option><option>Cartão de Débito</option></select>
                     </div>
-                    <div class="input-group">
-                        <label>Token de Acesso GitHub (ghp_...)</label>
-                        <input type="password" id="gh-token" placeholder="Token Pessoal">
+                    <div class="input-group" style="margin: 0;">
+                        <label class="label-recebido">Valor Recebido (R$)</label>
+                        <input type="number" id="valor-pago" placeholder="0.00" oninput="calcularTroco()" onkeydown="fecharVendaComEnter(event)">
                     </div>
-                    <button class="btn-acao-nuvem" onclick="salvarConfigNuvem()"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar e Sincronizar Nuvem</button>
+                    <div style="grid-column: span 2; text-align:right; font-weight:bold;" id="box-troco">Troco: R$ 0.00</div>
+                    
+                    <button class="btn-universal" onclick="finalizarVenda(false)" style="background: var(--sucesso);">FINALIZAR PEDIDO (F2)</button>
+                    <button class="btn-universal" id="btn-finalizar-fiscal" onclick="finalizarVenda(true)" style="background: var(--fiscal); font-size: 18px;">EMITIR NFC-e (F4)</button>
                 </div>
             </div>
-
-        </main>
+        </div>
     </div>
 
-    <!-- MODAL PAGAMENTO (COM MÓDULO DE CRÉDITO INTEGRADO) -->
-    <div id="modal-pagamento" class="modal-bg">
-        <div class="modal-card">
-            <h3 id="titulo-modal-pag">Pagamento</h3>
+    <!-- TELA ADM E MODAIS MANTIDOS ESTRUTURALMENTE IGUAIS AO MASTER -->
+    <div id="tela-adm" class="tela">
+        <div class="top-bar">
+            <div><strong>PAINEL GERENCIAL - MATERIAIS DE CONSTRUÇÃO</strong></div>
+            <button class="btn-universal" onclick="mostrarTela('tela-pdv')" style="background: var(--primaria); width: auto; padding: 8px 15px;">Voltar ao Caixa</button>
+        </div>
+        <div class="dashboard-area">
+            <!-- Conteúdo ADM omitido visualmente aqui para manter a brevidade do HTML, mas a funcionalidade de Sincronização Mavyc continua ativa. -->
+            <div style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid var(--sucesso); margin-bottom: 20px;">
+                <h3 style="color: var(--sucesso); margin-bottom: 15px;">📊 Dashboard de Vendas (Expediente)</h3>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px; background: #f0fdf4; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #bbf7d0;">
+                        <p style="font-size: 14px; color: #166534; font-weight: bold; margin-bottom:5px;">TOTAL VENDIDO</p>
+                        <div class="container-faturamento-olho">
+                            <h2 style="font-size: 38px; color: #15803d;" id="dash-total">R$ ***</h2>
+                            <button class="btn-olho-faturamento" id="btn-olho-faturamento" onclick="toggleVisualizacaoFaturamento()">👁️‍🗨️</button>
+                        </div>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; background: #eff6ff; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #bfdbfe;">
+                        <p style="font-size: 14px; color: #1e40af; font-weight: bold; margin-bottom:5px;">QTD. DE PEDIDOS</p>
+                        <h2 style="font-size: 38px; color: #1d4ed8;" id="dash-qtd">0</h2>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;">
+                        <button onclick="zerarVendas()" style="padding: 18px; background: var(--erro); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">🗑️ Fechar Caixa do Dia</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid var(--alerta);">
+                    <h3>➕ Cadastrar Produto</h3>
+                    <div class="input-group" style="margin-top: 15px;"><input type="text" id="novo-cod" placeholder="Código de Barras"></div>
+                    <div class="input-group"><input type="text" id="novo-nome" placeholder="Nome do Produto"></div>
+                    <div class="input-group"><input type="number" id="novo-preco" placeholder="Preço (Ex: 5.50)" step="0.01"></div>
+                    <button onclick="cadastrarProdutoLocal()" class="btn-universal" style="background: var(--secundaria);">Salvar no Sistema</button>
+                </div>
+                <div style="background: white; padding: 25px; border-radius: 8px; border-left: 5px solid var(--fiscal);">
+                    <h3>☁️ Sincronização Mavyc (Nuvem)</h3>
+                    <div class="input-group" style="margin-top: 15px;"><input type="text" id="cloud-repo" placeholder="Repositório GitHub"></div>
+                    <div class="input-group"><input type="password" id="cloud-token" placeholder="Token GitHub"></div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="salvarConfiguracaoNuvem()" class="btn-universal" style="background: var(--fiscal); font-size:14px;">Salvar Dados</button>
+                        <button onclick="forcarSincronizacaoNuvem()" class="btn-universal" style="background: var(--sucesso); font-size:14px;">⚡ Forçar Sync</button>
+                    </div>
+                </div>
+            </div>
             
-            <label style="font-weight:bold; margin-bottom:5px; display:block;">Forma:</label>
-            <select id="forma-pag" class="metodo-pag" onchange="verificarModoFiado()">
-                <option value="Dinheiro">Dinheiro</option>
-                <option value="PIX">PIX</option>
-                <option value="Cartão de Crédito">Cartão de Crédito</option>
-                <option value="Cartão de Débito">Cartão de Débito</option>
-                <option value="Fiado">Fiado (Crediário)</option>
-            </select>
-
-            <!-- MÓDULO DE FIADO -->
-            <div id="area-cliente-fiado" style="display:none; margin-bottom: 15px; padding: 15px; background: #fefce8; border: 1px solid #fde047; border-radius: 4px;">
-                <label style="font-weight:bold; margin-bottom:5px; display:block; color: #854d0e;">Selecionar Cliente:</label>
-                <select id="cliente-fiado" class="metodo-pag" style="border-color: #fde047;" onchange="atualizarLimiteUi()">
-                    <!-- Opções geradas via JS -->
-                </select>
-                <div id="info-limite" style="font-size: 14px; color: var(--erro); font-weight: bold; margin-top: 5px;"></div>
-            </div>
-
-            <div style="text-align: right; margin-top: 15px;"><p>Valor a Pagar:</p><h2 id="modal-total" style="color:var(--azul-marca);">R$ 0,00</h2></div>
-            <div class="botoes-modal">
-                <button class="btn-cancelar" onclick="document.getElementById('modal-pagamento').classList.remove('ativa')">Cancelar</button>
-                <button class="btn-confirmar" onclick="concluirVenda()">Confirmar Venda</button>
+            <div style="background: white; padding: 25px; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3>Estoque Integrado: <span id="contador-produtos" style="color: var(--primaria);">0</span> itens</h3>
+                </div>
+                <table class="tabela-dados">
+                    <thead><tr><th>Código</th><th>Material / Produto</th><th>Preço (R$)</th></tr></thead>
+                    <tbody id="tabela-estoque-corpo"></tbody>
+                </table>
             </div>
         </div>
     </div>
 
-    <!-- WIDGET DE SUPORTE TIAGO & MAYCON -->
-    <div id="suporte-widget">
-        <button class="btn-suporte-flutuante" onclick="toggleSuporte()">
-            <i class="fa-brands fa-whatsapp"></i>
-        </button>
+    <div id="modal-busca" class="modal-bg">
+        <div class="modal-card">
+            <h3 style="color: var(--primaria); margin-bottom: 10px;">Consultar Preço</h3>
+            <input type="text" id="campo-consulta" placeholder="Digite o material..." style="width:100%; padding:14px; border:2px solid #cbd5e1; border-radius:8px; outline:none; font-size:16px;" oninput="executarBusca(this.value)">
+            <div id="resultado-busca" style="max-height: 250px; overflow-y:auto; margin-top:15px; padding-top:10px;"></div>
+            <button class="btn-universal" style="background:var(--secundaria); margin-top:20px;" onclick="fecharModalBusca()">Fechar</button>
+        </div>
+    </div>
 
-        <div id="suporte-menu">
-            <p class="suporte-titulo">Precisa de Ajuda com o PDV?</p>
+    <div id="modal-editar-preco" class="modal-bg">
+        <div class="modal-card">
+            <h3 style="color: var(--secundaria); margin-bottom: 5px;">Mudar Preço</h3>
+            <div class="input-group" style="position: relative; margin-top:15px;">
+                <input type="text" id="edit-cod" placeholder="Buscar material..." oninput="buscarParaEdicao(this.value)" onkeydown="navegarSugestoesEdicao(event)" autocomplete="off">
+                <input type="hidden" id="edit-cod-selecionado">
+                <div id="dropdown-edicao-preco" class="dropdown-busca" style="top: 100%; bottom: auto; margin-top: 5px;"></div>
+                <div id="edit-nome-prod" style="font-size:13px; font-weight:bold; margin-top:8px; min-height:18px;"></div>
+            </div>
+            <div class="input-group"><label>Novo Preço (R$)</label><input type="number" id="edit-preco" placeholder="0.00" step="0.01"></div>
+            <div class="input-group"><label>Senha do Gerente</label><input type="password" id="edit-senha" placeholder="••••••••" onkeypress="if(event.key === 'Enter') salvarNovoPreco()"></div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-universal" style="background: var(--erro);" onclick="fecharModalPreco()">Cancelar</button>
+                <button class="btn-universal" style="background: var(--sucesso);" onclick="salvarNovoPreco()">Salvar</button>
+            </div>
+        </div>
+    </div>
 
-            <!-- Opção Tiago -->
-            <a href="https://wa.me/5584981549052?text=Olá%20Tiago,%20estou%20com%20uma%20dúvida%20no%20sistema%20do%20João." target="_blank" class="link-suporte">
-                <i class="fa-brands fa-whatsapp"></i>
-                <strong>Suporte Tiago</strong>
+    <!-- WIDGET SUPORTE MAVYC -->
+    <div class="suporte-widget">
+        <div class="menu-suporte" id="menuSuporte">
+            <div class="titulo-suporte">Suporte Mavyc Digital</div>
+            <a href="https://wa.me/5584981549052?text=Olá,%20Tiago!%20Preciso%20de%20suporte%20no%20PDV." target="_blank" class="link-atendente">
+                <i class="fa-brands fa-whatsapp"></i><div class="info-atendente"><span>Tiago Rafael</span><small>Suporte Técnico N1</small></div>
             </a>
-
-            <!-- Opção Maycon -->
-            <a href="https://wa.me/5584994649251?text=Olá%20Maycon,%20estou%20com%20uma%20dúvida%20no%20sistema%20do%20João." target="_blank" class="link-suporte">
-                <i class="fa-brands fa-whatsapp"></i>
-                <strong>Suporte Maycon</strong>
+            <a href="https://wa.me/5584994649251?text=Olá,%20Maycon!%20Preciso%20de%20suporte%20no%20sistema." target="_blank" class="link-atendente" style="margin-bottom: 0;">
+                <i class="fa-brands fa-whatsapp"></i><div class="info-atendente"><span>Maycon Vinícius</span><small>Dúvidas e Atualizações</small></div>
             </a>
         </div>
+        <button class="btn-suporte-float" onclick="toggleSuporte()"><i class="fa-brands fa-whatsapp"></i></button>
     </div>
 
     <script>
-        // RECUPERAÇÃO DO ESTOQUE DA MEMÓRIA OU CARREGA O PADRÃO
-        let bdProdutos = JSON.parse(localStorage.getItem('cp_produtos')) || [
-            { cod: '101', nome: 'Cimento CP II 50kg Votorantim', preco: 35.90, un: 'SC', precisao: 0 },
-            { cod: '102', nome: 'Areia Média Lavada', preco: 85.00, un: 'M³', precisao: 2 },
-            { cod: '103', nome: 'Brita Número 1', preco: 90.00, un: 'M³', precisao: 2 },
-            { cod: '104', nome: 'Tijolo Cerâmico 8 Furos', preco: 0.65, un: 'UN', precisao: 0 },
-            { cod: '105', nome: 'Fio Elétrico Flexível 2.5mm (Sil)', preco: 1.80, un: 'MT', precisao: 2 },
-            { cod: '106', nome: 'Argamassa ACIII 20kg Quartzolit', preco: 28.50, un: 'SC', precisao: 0 },
-            { cod: '107', nome: 'Tubo PVC Soldável 25mm (Água Fria)', preco: 4.50, un: 'UN', precisao: 0 },
-            { cod: '108', nome: 'Prego 18x27 com cabeça', preco: 18.00, un: 'KG', precisao: 3 },
-            { cod: '109', nome: 'Telha Fibrocimento 2.44x1.10m 6mm', preco: 45.90, un: 'UN', precisao: 0 }
-        ];
+        let estoqueCloud = {}; 
+        let precosModificadosManualmente = {}; let vendasRealizadas = []; let cupomAtual = []; let totalVenda = 0; let listaFiltrada = []; let faturamentoVisivel = false; 
+        let indiceSelecionadoSugestoes = -1; let indiceSelecionadoBalanca = -1; let indiceSelecionadoEdicao = -1;
 
-        let bdClientes = JSON.parse(localStorage.getItem('cp_clientes')) || [
-            { id: 1, nome: 'Construtora Alpha', limite: 5000.00, devendo: 0.00 },
-            { id: 2, nome: 'Mestre Roberto (Pedreiro)', limite: 1500.00, devendo: 0.00 },
-            { id: 3, nome: 'Dona Maria (Vizinha)', limite: 300.00, devendo: 0.00 }
-        ];
+        window.onload = async function() {
+            document.getElementById('cloud-repo').value = localStorage.getItem('cloud_repo') || '';
+            document.getElementById('cloud-token').value = localStorage.getItem('cloud_token') || '';
+            
+            const vendasSalvas = localStorage.getItem('vendas') || localStorage.getItem('vendas_realizadas');
+            if (vendasSalvas) { try { vendasRealizadas = JSON.parse(vendasSalvas); } catch(e) { vendasRealizadas = []; } }
+            const locais = localStorage.getItem('precos_modificados');
+            if (locais) precosModificadosManualmente = JSON.parse(locais);
 
-        let carrinho = [];
-        let historicoVendas = JSON.parse(localStorage.getItem('cp_vendas')) || [];
-        let produtoTemp = null;
-        let tipoVendaAtualIsFiscal = false;
+            const estoqueIntegrado = localStorage.getItem('estoque_mercado');
+            if (estoqueIntegrado && Object.keys(JSON.parse(estoqueIntegrado)).length > 10) {
+                estoqueCloud = JSON.parse(estoqueIntegrado);
+            } else { await carregarEstoqueCompletoDaNuvem(); }
 
-        window.onload = () => {
-            document.getElementById('gh-repo').value = localStorage.getItem('gh_repo') || '';
-            document.getElementById('gh-token').value = localStorage.getItem('gh_token') || '';
-            renderizarTabelas();
-
-            document.addEventListener('keydown', (e) => {
-                if(e.key === 'F2') { e.preventDefault(); prepararPagamento(false); }
-                if(e.key === 'F4') { e.preventDefault(); prepararPagamento(true); }
+            for (let c in precosModificadosManualmente) {
+                if (typeof precosModificadosManualmente[c] === 'object' && precosModificadosManualmente[c] !== null) { estoqueCloud[c] = precosModificadosManualmente[c]; } 
+                else { if (estoqueCloud[c]) estoqueCloud[c].preco = precosModificadosManualmente[c]; }
+            }
+            localStorage.setItem('estoque_mercado', JSON.stringify(estoqueCloud)); document.getElementById('contador-produtos').innerText = Object.keys(estoqueCloud).length;
+            atualizarDashboard();
+            
+            document.addEventListener('keydown', (e) => { 
+                if (e.key === 'F4') { e.preventDefault(); finalizarVenda(true); }
+                if (e.key === 'F2') { e.preventDefault(); finalizarVenda(false); }
+                if (e.key === 'F3') { e.preventDefault(); document.getElementById('forma-pagamento').focus(); }
             });
+            manterFocoNoInput();
         };
 
-        // CONTROLE DO WIDGET DE SUPORTE
-        function toggleSuporte() {
-            const menu = document.getElementById('suporte-menu');
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // LOGIN
-        function fazerLogin() {
-            const user = document.getElementById('login-user').value.toLowerCase().trim();
-            const pass = document.getElementById('login-pass').value;
-            
-            if((user === 'joao' && pass === 'admin123') || (user === 'caixa' && pass === '123')) {
-                document.getElementById('nome-operador').innerText = user === 'joao' ? 'João (Proprietário)' : 'Caixa';
-                document.getElementById('tela-login').classList.remove('ativa');
-                document.getElementById('tela-app').classList.add('ativa');
-                document.getElementById('busca-produto').focus();
-            } else {
-                alert("Credenciais inválidas. Fale com o suporte técnico.");
+        async function carregarEstoqueCompletoDaNuvem() {
+            let repo = localStorage.getItem('cloud_repo');
+            if(repo) {
+                try {
+                    let res = await fetch(`https://raw.githubusercontent.com/${repo}/main/precos.json?t=${new Date().getTime()}`);
+                    if (res.ok) { let dadosNuvem = await res.json(); if(Object.keys(dadosNuvem).length > 10){ estoqueCloud = dadosNuvem; localStorage.setItem('estoque_mercado', JSON.stringify(estoqueCloud)); return; } }
+                } catch(e) {}
             }
+            estoqueCloud = busterProdutosBackup; localStorage.setItem('estoque_mercado', JSON.stringify(estoqueCloud));
         }
 
-        function sairSistema() { window.location.reload(); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('fechado'); }
-        function mudarView(id, el) {
-            document.querySelectorAll('.conteudo-view').forEach(v => v.classList.remove('ativa'));
-            document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('ativo'));
-            document.getElementById(id).classList.add('ativa');
-            el.classList.add('ativo');
-            if(id === 'view-caixa') document.getElementById('busca-produto').focus();
+        function toggleSuporte() { document.getElementById('menuSuporte').classList.toggle('ativo'); }
+
+        function cadastrarProdutoLocal() {
+            let cod = document.getElementById('novo-cod').value.trim(); let nome = document.getElementById('novo-nome').value.trim().toUpperCase(); let preco = parseFloat(document.getElementById('novo-preco').value.replace(',', '.'));
+            if(!cod || !nome || !preco || preco <= 0) return alert("Preencha todos os campos!");
+            estoqueCloud[cod] = { nome: nome, preco: preco }; localStorage.setItem('estoque_mercado', JSON.stringify(estoqueCloud));
+            precosModificadosManualmente[cod] = { nome: nome, preco: preco }; localStorage.setItem('precos_modificados', JSON.stringify(precosModificadosManualmente));
+            forcarSincronizacaoNuvemSilenciosa(); alert("Produto salvo!");
+            document.getElementById('novo-cod').value = ''; document.getElementById('novo-nome').value = ''; document.getElementById('novo-preco').value = ''; renderizarTabelaAdm();
         }
 
-        // PDV LOGIC
-        function formatarMoeda(v) { return v.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
-
-        function pesquisarProduto(termo) {
-            termo = termo.toLowerCase().trim();
-            const box = document.getElementById('box-selecao');
-            if(!termo) { box.classList.remove('ativo'); produtoTemp = null; return; }
-            
-            const prod = bdProdutos.find(p => p.cod == termo || p.nome.toLowerCase().includes(termo));
-            if(prod) {
-                produtoTemp = prod; box.classList.add('ativo');
-                document.getElementById('sel-nome').innerText = `${prod.cod} - ${prod.nome}`;
-                document.getElementById('sel-preco').value = formatarMoeda(prod.preco);
-                
-                const inputQtd = document.getElementById('sel-qtd');
-                const labelQtd = document.getElementById('label-qtd');
-                
-                if(prod.precisao > 0) {
-                    inputQtd.step = Math.pow(10, -prod.precisao).toString();
-                    labelQtd.innerText = `Fração (${prod.un}) - Máx ${prod.precisao} casas`;
-                } else {
-                    inputQtd.step = "1";
-                    labelQtd.innerText = `Quantidade (${prod.un}) - Apenas Inteiros`;
-                }
-                
-                inputQtd.value = "1";
-            }
+        function toggleVisualizacaoFaturamento() {
+            if (!faturamentoVisivel) {
+                if (prompt("Senha do Gerente:") === 'admin123') { faturamentoVisivel = true; document.getElementById('btn-olho-faturamento').innerText = "👁️"; atualizarDashboard(); } else { alert("Senha incorreta!"); }
+            } else { faturamentoVisivel = false; document.getElementById('btn-olho-faturamento').innerText = "👁️‍🗨️"; atualizarDashboard(); }
         }
 
-        function adicionarAoCarrinho() {
-            if(!produtoTemp) return;
-            const qtdInput = document.getElementById('sel-qtd').value;
-            let qtd = parseFloat(qtdInput);
-
-            if(isNaN(qtd) || qtd <= 0) return alert('Quantidade inválida!');
-            
-            let qtdFormatada = qtd;
-            if(produtoTemp.precisao === 0) {
-                if(!Number.isInteger(qtd)) return alert(`Erro Logístico: Venda apenas em unidades inteiras!`);
-            } else {
-                const fator = Math.pow(10, produtoTemp.precisao);
-                qtdFormatada = Math.round(qtd * fator) / fator;
-                if (qtd !== qtdFormatada) return alert(`Erro de Precisão: Máximo de ${produtoTemp.precisao} casas decimais.`);
-            }
-
-            const totalItem = qtdFormatada * produtoTemp.preco;
-            carrinho.push({ cod: produtoTemp.cod, nome: produtoTemp.nome, un: produtoTemp.un, preco: produtoTemp.preco, qtd: qtdFormatada, total: totalItem, precisao: produtoTemp.precisao });
-
-            document.getElementById('busca-produto').value = ''; document.getElementById('box-selecao').classList.remove('ativo'); produtoTemp = null;
-            atualizarCarrinhoUi(); document.getElementById('busca-produto').focus();
+        function atualizarDashboard() {
+            let totalFinanceiro = 0; vendasRealizadas.forEach(v => totalFinanceiro += v.total);
+            const txtTotal = document.getElementById('dash-total');
+            if (faturamentoVisivel) { txtTotal.innerText = "R$ " + formatarMoeda(totalFinanceiro); } else { txtTotal.innerText = "R$ ***"; }
+            document.getElementById('dash-qtd').innerText = vendasRealizadas.length;
         }
 
-        function removerItem(idx) { carrinho.splice(idx, 1); atualizarCarrinhoUi(); }
+        function zerarVendas() { if(confirm("Fechar caixa?")) { vendasRealizadas = []; localStorage.setItem('vendas_realizadas', JSON.stringify([])); faturamentoVisivel = false; document.getElementById('btn-olho-faturamento').innerText = "👁️‍🗨️"; atualizarDashboard(); registrarLog("Caixa zerado.", "alerta"); } }
 
-        function atualizarCarrinhoUi() {
-            const lista = document.getElementById('lista-carrinho'); lista.innerHTML = '';
-            let somaTotal = 0;
-            carrinho.forEach((item, index) => {
-                somaTotal += item.total;
-                let txtQtd = item.qtd.toFixed(item.precisao);
-                lista.innerHTML += `<div class="item-carrinho">
-                    <div class="detalhes"><strong>${item.nome}</strong><br><small>${txtQtd} ${item.un} x ${formatarMoeda(item.preco)}</small></div>
-                    <div class="valor" style="font-weight:bold;">${formatarMoeda(item.total)}</div>
-                    <button class="btn-remover" onclick="removerItem(${index})"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
-            });
-            document.getElementById('total-venda').innerText = formatarMoeda(somaTotal);
+        function salvarConfiguracaoNuvem() {
+            localStorage.setItem('cloud_repo', document.getElementById('cloud-repo').value.trim()); localStorage.setItem('cloud_token', document.getElementById('cloud-token').value.trim());
+            alert("Configurações salvas!"); carregarEstoqueCompletoDaNuvem().then(() => renderizarTabelaAdm());
         }
 
-        function prepararPagamento(isFiscal) {
-            if(carrinho.length === 0) return alert("Carrinho Vazio!");
-            tipoVendaAtualIsFiscal = isFiscal;
-            document.getElementById('titulo-modal-pag').innerText = isFiscal ? "Emitir NFC-e" : "Emitir Nota Livre";
-            document.getElementById('titulo-modal-pag').style.color = isFiscal ? "var(--fiscal)" : "var(--azul-marca)";
-            document.getElementById('modal-total').innerText = document.getElementById('total-venda').innerText;
-            document.getElementById('forma-pag').value = 'Dinheiro'; 
-            verificarModoFiado(); 
-            document.getElementById('modal-pagamento').classList.add('ativa');
-        }
-
-        function verificarModoFiado() {
-            const forma = document.getElementById('forma-pag').value;
-            const areaFiado = document.getElementById('area-cliente-fiado');
-            if(forma === 'Fiado') {
-                areaFiado.style.display = 'block';
-                const select = document.getElementById('cliente-fiado');
-                select.innerHTML = '<option value="">Selecione o Cliente...</option>';
-                bdClientes.forEach(c => { select.innerHTML += `<option value="${c.id}">${c.nome}</option>`; });
-                document.getElementById('info-limite').innerText = '';
-            } else {
-                areaFiado.style.display = 'none';
-            }
-        }
-
-        function atualizarLimiteUi() {
-            const id = parseInt(document.getElementById('cliente-fiado').value);
-            if(!id) return;
-            const c = bdClientes.find(x => x.id === id);
-            const disponivel = c.limite - c.devendo;
-            document.getElementById('info-limite').innerText = `Limite Disponível: ${formatarMoeda(disponivel)}`;
-            document.getElementById('info-limite').style.color = disponivel >= 0 ? "var(--sucesso)" : "var(--erro)";
-        }
-
-        function concluirVenda() {
-            const formaPag = document.getElementById('forma-pag').value;
-            const total = carrinho.reduce((a, c) => a + c.total, 0);
-            let nomeClienteFiado = null;
-
-            if(formaPag === 'Fiado') {
-                const idCliente = parseInt(document.getElementById('cliente-fiado').value);
-                if(!idCliente) return alert("Erro: Selecione um cliente cadastrado para vender no crediário.");
-                const cliente = bdClientes.find(x => x.id === idCliente);
-                const disponivel = cliente.limite - cliente.devendo;
-                if(total > disponivel) return alert(`BLOQUEIO DE CRÉDITO: A venda excede o limite disponível de ${formatarMoeda(disponivel)} do cliente ${cliente.nome}.`);
-                
-                cliente.devendo += total;
-                nomeClienteFiado = cliente.nome;
-                localStorage.setItem('cp_clientes', JSON.stringify(bdClientes));
-            }
-
-            const venda = {
-                id: Math.floor(Math.random() * 90000) + 10000,
-                data: new Date().toLocaleString('pt-BR'),
-                pagamento: formaPag === 'Fiado' ? `Fiado (${nomeClienteFiado})` : formaPag,
-                valor: total,
-                fiscal: tipoVendaAtualIsFiscal,
-                itens: [...carrinho]
-            };
-            
-            historicoVendas.push(venda);
-            localStorage.setItem('cp_vendas', JSON.stringify(historicoVendas));
-            
-            imprimirRecibo(venda);
-            carrinho = []; atualizarCarrinhoUi();
-            document.getElementById('modal-pagamento').classList.remove('ativa');
-            renderizarTabelas();
-            sincronizarGitHubSilencioso();
-        }
-
-        function imprimirRecibo(venda) {
-            let container = document.getElementById('recibo-impressao');
-            if(container) container.remove();
-            
-            let html = `<div id="recibo-impressao" style="padding:10px; border:1px solid #000;">
-                <div style="text-align:center; font-weight:bold;">COMERCIAL PEREIRA</div>
-                <div style="text-align:center; margin-bottom:10px; font-size:10px;">${venda.fiscal ? 'DOCUMENTO AUXILIAR NFC-e' : 'RECIBO DE VENDA (NÃO FISCAL)'}</div>
-                <div style="border-top:1px dashed #000; margin:5px 0;"></div>`;
-                
-            venda.itens.forEach(i => {
-                let txtQtd = i.qtd.toFixed(i.precisao);
-                html += `<div>${txtQtd}${i.un} x ${i.nome} - ${formatarMoeda(i.total)}</div>`;
-            });
-            
-            html += `<div style="border-top:1px dashed #000; margin:5px 0;"></div>
-                <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>TOTAL:</span><span>${formatarMoeda(venda.valor)}</span></div>
-                <div>Pagamento: ${venda.pagamento}</div>
-            </div>`;
-            
-            let div = document.createElement('div'); div.innerHTML = html;
-            document.body.appendChild(div.firstElementChild);
-            setTimeout(() => window.print(), 100);
-        }
-
-        // LÓGICA DE IMPORTAÇÃO DE PLANILHA CSV
-        function processarPlanilha(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const texto = e.target.result;
-                const linhas = texto.split('\n');
-                let adicionados = 0;
-
-                for (let i = 1; i < linhas.length; i++) {
-                    const linha = linhas[i].trim();
-                    if (!linha) continue;
-
-                    const colunas = linha.includes(';') ? linha.split(';') : linha.split(',');
-
-                    if (colunas.length >= 3) {
-                        const codigo = colunas[0].trim();
-                        const nomeProduto = colunas[1].trim();
-                        const preco = parseFloat(colunas[2].trim().replace(',', '.'));
-
-                        const { precisao, un } = deduzirPrecisaoEUnidade(nomeProduto);
-
-                        const idx = bdProdutos.findIndex(p => p.cod == codigo);
-                        if (idx > -1) {
-                            bdProdutos[idx] = { cod: codigo, nome: nomeProduto, preco: preco, un: un, precisao: precisao };
-                        } else {
-                            bdProdutos.push({ cod: codigo, nome: nomeProduto, preco: preco, un: un, precisao: precisao });
-                        }
-                        adicionados++;
-                    }
-                }
-
-                localStorage.setItem('cp_produtos', JSON.stringify(bdProdutos));
-                renderizarTabelas();
-                alert(`✅ ${adicionados} produtos importados com sucesso!\nVá na aba GitHub Nuvem para salvar as alterações permanentemente.`);
-                event.target.value = ''; 
-            };
-            reader.readAsText(file, 'UTF-8');
-        }
-
-        function deduzirPrecisaoEUnidade(nome) {
-            const termo = nome.toLowerCase();
-            if (termo.includes('areia') || termo.includes('brita') || termo.includes('fio') || termo.includes('cabo') || termo.includes('mangueira')) {
-                return { precisao: 2, un: termo.includes('areia') || termo.includes('brita') ? 'M³' : 'MT' };
-            } else if (termo.includes('prego') || termo.includes('gesso') || termo.includes('parafuso')) {
-                return { precisao: 3, un: 'KG' };
-            }
-            return { precisao: 0, un: 'UN' };
-        }
-
-        function baixarXMLFiscal() {
-            const notasFiscais = historicoVendas.filter(v => v.fiscal);
-            if(notasFiscais.length === 0) return alert("Nenhuma NFC-e gerada!");
-            let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<FechamentoCaixa>\n  <Empresa>Comercial Pereira</Empresa>\n  <NFCe>\n`;
-            notasFiscais.forEach(n => { xml += `    <Nota id="${n.id}">\n      <Data>${n.data}</Data>\n      <Valor>${n.valor.toFixed(2)}</Valor>\n      <Pagamento>${n.pagamento}</Pagamento>\n    </Nota>\n`; });
-            xml += `  </NFCe>\n</FechamentoCaixa>`;
-            let blob = new Blob([xml], { type: 'text/xml' });
-            let link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'XML_Contador_Comercial_Pereira.xml'; link.click();
-        }
-
-        function renderizarTabelas() {
-            const tbProd = document.getElementById('tabela-produtos-admin'); tbProd.innerHTML = '';
-            bdProdutos.forEach(p => {
-                const txtFracao = p.precisao === 0 ? 'Inteiro' : `${p.precisao} Casas Dec.`;
-                tbProd.innerHTML += `<tr><td>${p.cod}</td><td>${p.nome}</td><td>${txtFracao}</td><td>${formatarMoeda(p.preco)}</td></tr>`;
-            });
-
-            const tbVend = document.getElementById('tabela-vendas'); tbVend.innerHTML = '';
-            [...historicoVendas].reverse().forEach(v => {
-                let badge = v.fiscal ? `<span class="badge-fiscal">NFC-e</span>` : `<span class="badge-livre">Livre</span>`;
-                tbVend.innerHTML += `<tr><td>${badge}</td><td>#${v.id}</td><td>${v.data}</td><td>${v.pagamento}</td><td><b>${formatarMoeda(v.valor)}</b></td></tr>`;
-            });
-        }
-
-        async function salvarConfigNuvem() {
-            const repo = document.getElementById('gh-repo').value;
-            const token = document.getElementById('gh-token').value;
-            localStorage.setItem('gh_repo', repo); localStorage.setItem('gh_token', token);
-            alert("Credenciais GitHub salvas! Iniciando sincronização...");
-            sincronizarGitHubSilencioso();
-        }
-
-        async function sincronizarGitHubSilencioso() {
-            const repo = localStorage.getItem('gh_repo'); const token = localStorage.getItem('gh_token');
-            if(!repo || !token) return;
+        async function forcarSincronizacaoNuvem() {
+            let repo = localStorage.getItem('cloud_repo'); let token = localStorage.getItem('cloud_token'); if(!repo || !token) return alert("Configure a Nuvem primeiro!");
             try {
-                let url = `https://api.github.com/repos/${repo}/contents/dados_comercial_pereira.json`;
-                let res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
-                let sha = res.ok ? (await res.json()).sha : "";
-                
-                let pacoteConsolidado = { estoque: bdProdutos, vendas: historicoVendas, carteira_clientes: bdClientes };
-                let body = { 
-                    message: "Sync Automática (Estoque Atualizado via CSV)", 
-                    content: btoa(unescape(encodeURIComponent(JSON.stringify(pacoteConsolidado, null, 2)))),
-                    branch: "main"
-                };
-                if(sha) body.sha = sha;
-                
-                await fetch(url, { method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-            } catch(e) { console.log("Aviso: Sincronização em nuvem falhou."); }
+                let sha = ""; let url = `https://api.github.com/repos/${repo}/contents/precos.json`;
+                let resCheck = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+                if(resCheck.ok) { let dataCheck = await resCheck.json(); sha = dataCheck.sha; }
+                let bodyPayload = { message: "Sync Geral PDV", content: btoa(unescape(encodeURIComponent(JSON.stringify(estoqueCloud, null, 2)))), branch: "main" };
+                if(sha) bodyPayload.sha = sha;
+                let resUpload = await fetch(url, { method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(bodyPayload) });
+                if(resUpload.ok) { registrarLog("Nuvem atualizada!", "sucesso"); alert("Sincronizado!"); } else { alert("Erro GitHub."); }
+            } catch(err) { alert("Erro de conexão."); }
         }
+
+        async function forcarSincronizacaoNuvemSilenciosa() {
+            let repo = localStorage.getItem('cloud_repo'); let token = localStorage.getItem('cloud_token'); if(!repo || !token) return;
+            try {
+                let sha = ""; let url = `https://api.github.com/repos/${repo}/contents/precos.json`;
+                let resCheck = await fetch(url, { headers: { "Authorization": `token ${token}` } });
+                if(resCheck.ok) { let dataCheck = await resCheck.json(); sha = dataCheck.sha; }
+                let bodyPayload = { message: "Sync Item PDV", content: btoa(unescape(encodeURIComponent(JSON.stringify(estoqueCloud, null, 2)))), branch: "main" };
+                if(sha) bodyPayload.sha = sha;
+                await fetch(url, { method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(bodyPayload) });
+            } catch(e) {}
+        }
+
+        function pularDaUnidadeProBipe(e) { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('codigo-barras').focus(); } }
+        function fecharVendaComEnter(e) { if (e.key === 'Enter') { e.preventDefault(); finalizarVenda(true); } }
+
+        function manterFocoNoInput() {
+            document.addEventListener('click', (e) => {
+                const dropBarra = document.getElementById('dropdown-sugestoes'); const dropBalanca = document.getElementById('dropdown-balanca'); const dropEdicao = document.getElementById('dropdown-edicao-preco');
+                const isPdv = document.getElementById('tela-pdv').classList.contains('ativa'); const modalPreco = document.getElementById('modal-editar-preco').classList.contains('ativo'); const modalBusca = document.getElementById('modal-busca').classList.contains('ativo');
+                
+                if(!document.getElementById('peso-balanca').contains(e.target) && !document.getElementById('codigo-balanca').contains(e.target) && !dropBalanca.contains(e.target)) dropBalanca.style.display = 'none';
+                if(!document.getElementById('codigo-barras').contains(e.target) && !dropBarra.contains(e.target)) dropBarra.style.display = 'none';
+                if(!document.getElementById('edit-cod').contains(e.target) && !dropEdicao.contains(e.target)) dropEdicao.style.display = 'none';
+                if (document.getElementById('peso-balanca').contains(e.target) || document.getElementById('codigo-balanca').contains(e.target) || dropBalanca.contains(e.target)) return; 
+                
+                const ativo = document.activeElement.id;
+                if (isPdv && !modalPreco && !modalBusca && !dropBarra.contains(e.target) && !dropBalanca.contains(e.target) && ativo !== 'valor-pago' && ativo !== 'forma-pagamento' && ativo !== 'peso-balanca' && ativo !== 'codigo-balanca' && ativo !== 'input-qtd-manual') {
+                    document.getElementById('codigo-barras').focus();
+                }
+            });
+        }
+
+        function mostrarTela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa'); if (id === 'tela-adm') renderizarTabelaAdm(); }
+
+        function fazerLogin() {
+            const u = document.getElementById('login-usuario').value.toLowerCase().trim(); const s = document.getElementById('login-senha').value.trim();
+            if (u === 'joao' && s === 'admin123') { document.getElementById('btn-painel-atalho').style.display = 'block'; document.getElementById('caixa-nome-status').innerText = 'João (Gerente)'; mostrarTela('tela-pdv'); } 
+            else if (u === 'caixa' && s === '123') { document.getElementById('btn-painel-atalho').style.display = 'none'; document.getElementById('caixa-nome-status').innerText = 'Caixa'; mostrarTela('tela-pdv'); } 
+            else { alert("Senha incorreta!"); }
+        }
+        
+        function sair() { mostrarTela('tela-login'); cupomAtual = []; faturamentoVisivel = false; document.getElementById('btn-olho-faturamento').innerText = "👁️‍🗨️"; renderizarCupom(); }
+
+        function registrarLog(msg, tipo='info') {
+            const log = document.getElementById('log-sistema'); const col = tipo === 'erro' ? '#ef4444' : tipo === 'alerta' ? '#eab308' : tipo === 'sucesso' ? '#16a34a' : '#38bdf8';
+            log.innerHTML = `<div style="color:${col}">[SISTEMA] ${msg}</div>` + log.innerHTML;
+        }
+
+        function abrirModalBusca() { document.getElementById('modal-busca').classList.add('ativo'); document.getElementById('campo-consulta').value = ''; document.getElementById('resultado-busca').innerHTML = ''; setTimeout(() => document.getElementById('campo-consulta').focus(), 100); }
+        function fecharModalBusca() { document.getElementById('modal-busca').classList.remove('ativo'); document.getElementById('codigo-barras').focus(); }
+        
+        function executarBusca(val) {
+            let res = document.getElementById('resultado-busca'); res.innerHTML = ''; let t = val.toLowerCase().trim(); if(!t) return;
+            Object.keys(estoqueCloud).forEach(c => {
+                if(estoqueCloud[c].nome.toLowerCase().includes(t) || c.includes(t)) {
+                    res.innerHTML += `<div style="padding:10px; border-bottom:1px solid #eee; font-weight:bold;">🧱 ${estoqueCloud[c].nome} <br> <span style="color:var(--primaria)">Preço: R$ ${estoqueCloud[c].preco.toFixed(2)}</span> <small style="color:#666; float:right;">Cód: ${c}</small></div>`;
+                }
+            });
+        }
+
+        function abrirModalPreco() { document.getElementById('modal-editar-preco').classList.add('ativo'); document.getElementById('edit-cod').value = ''; document.getElementById('edit-cod-selecionado').value = ''; document.getElementById('edit-preco').value = ''; document.getElementById('edit-senha').value = ''; document.getElementById('edit-nome-prod').innerText = ''; setTimeout(() => document.getElementById('edit-cod').focus(), 100); }
+        function fecharModalPreco() { document.getElementById('modal-editar-preco').classList.remove('ativo'); document.getElementById('codigo-barras').focus(); }
+        
+        function filtrarPorNome(val) {
+            const texto = val.toLowerCase().trim(); const drop = document.getElementById('dropdown-sugestoes'); drop.innerHTML = ''; indiceSelecionadoSugestoes = -1;
+            if(!texto || !isNaN(texto)) { drop.style.display = 'none'; return; }
+            listaFiltrada = Object.keys(estoqueCloud).filter(c => estoqueCloud[c].nome.toLowerCase().includes(texto)).slice(0, 15);
+            if(listaFiltrada.length > 0) {
+                drop.style.display = 'block'; let qtdAtiva = parseFloat(document.getElementById('input-qtd-manual').value || 1);
+                listaFiltrada.forEach((c, idx) => drop.innerHTML += `<div class="opcao-busca" id="opt-sugestao-${idx}" onclick="addCupom('${c}', ${qtdAtiva})"><span>🛠️ ${estoqueCloud[c].nome}</span> <span>R$ ${estoqueCloud[c].preco.toFixed(2)}</span></div>`);
+            } else { drop.style.display = 'none'; }
+        }
+
+        function filtrarNomeBalanca(val) {
+            const texto = val.toLowerCase().trim(); const drop = document.getElementById('dropdown-balanca'); drop.innerHTML = ''; indiceSelecionadoBalanca = -1;
+            if(!texto) { drop.style.display = 'none'; return; }
+            listaFiltrada = Object.keys(estoqueCloud).filter(c => estoqueCloud[c].nome.toLowerCase().includes(texto)).slice(0, 10);
+            if(listaFiltrada.length > 0) {
+                drop.style.display = 'block';
+                listaFiltrada.forEach((c, idx) => { drop.innerHTML += `<div class="opcao-busca" id="opt-balanca-${idx}" onclick="addCupomBalanca('${c}')"><span>📏 ${estoqueCloud[c].nome}</span> <span>R$ ${estoqueCloud[c].preco.toFixed(2)} (Fração)</span></div>`; });
+            } else { drop.style.display = 'none'; }
+        }
+
+        function buscarParaEdicao(val) {
+            let txt = val.toLowerCase().trim(); let label = document.getElementById('edit-nome-prod'); let drop = document.getElementById('dropdown-edicao-preco'); drop.innerHTML = ''; indiceSelecionadoEdicao = -1;
+            if(!txt) { drop.style.display = 'none'; label.innerText = ''; return; }
+            if(!isNaN(txt) && txt.length >= 3) { if (estoqueCloud[txt]) { selecionarProdutoParaPreco(txt); return; } }
+            listaFiltrada = Object.keys(estoqueCloud).filter(c => estoqueCloud[c].nome.toLowerCase().includes(txt)).slice(0, 5);
+            if(listaFiltrada.length > 0) {
+                drop.style.display = 'block';
+                listaFiltrada.forEach((c, idx) => { drop.innerHTML += `<div class="opcao-busca" id="opt-edicao-${idx}" onclick="selecionarProdutoParaPreco('${c}')"><span>✏️ ${estoqueCloud[c].nome}</span> <span>R$ ${estoqueCloud[c].preco.toFixed(2)}</span></div>`; });
+            } else { drop.style.display = 'none'; label.innerText = "Não encontrado"; label.style.color = "var(--erro)"; }
+        }
+
+        function selecionarProdutoParaPreco(cod) {
+            document.getElementById('edit-cod').value = estoqueCloud[cod].nome; document.getElementById('edit-cod-selecionado').value = cod; document.getElementById('edit-preco').value = estoqueCloud[cod].preco.toFixed(2);
+            let label = document.getElementById('edit-nome-prod'); label.innerText = `✅ Selecionado: ${estoqueCloud[cod].nome}`; label.style.color = "var(--sucesso)"; document.getElementById('dropdown-edicao-preco').style.display = 'none'; document.getElementById('edit-preco').focus();
+        }
+
+        function navegarSugestoes(e) {
+            const drop = document.getElementById('dropdown-sugestoes'); const opcoes = drop.querySelectorAll('.opcao-busca');
+            if (drop.style.display === 'block' && opcoes.length > 0) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); if (indiceSelecionadoSugestoes < opcoes.length - 1) { if (indiceSelecionadoSugestoes >= 0) opcoes[indiceSelecionadoSugestoes].classList.remove('selecionada'); indiceSelecionadoSugestoes++; opcoes[indiceSelecionadoSugestoes].classList.add('selecionada'); opcoes[indiceSelecionadoSugestoes].scrollIntoView({ block: 'nearest' }); } return; } 
+                else if (e.key === 'ArrowUp') { e.preventDefault(); if (indiceSelecionadoSugestoes > 0) { if (indiceSelecionadoSugestoes >= 0) opcoes[indiceSelecionadoSugestoes].classList.remove('selecionada'); indiceSelecionadoSugestoes--; opcoes[indiceSelecionadoSugestoes].classList.add('selecionada'); opcoes[indiceSelecionadoSugestoes].scrollIntoView({ block: 'nearest' }); } return; } 
+                else if (e.key === 'Enter' && indiceSelecionadoSugestoes >= 0) { e.preventDefault(); let qtdAtiva = parseFloat(document.getElementById('input-qtd-manual').value || 1); addCupom(listaFiltrada[indiceSelecionadoSugestoes], qtdAtiva); document.getElementById('input-qtd-manual').value = "1"; return; }
+            }
+            if(e.key === 'Enter') {
+                e.preventDefault(); let txt = document.getElementById('codigo-barras').value.trim();
+                if(!txt) { if (cupomAtual.length === 0) return alert("Passe os produtos primeiro!"); document.getElementById('valor-pago').focus(); document.getElementById('valor-pago').select(); return; }
+                let qtd = parseFloat(document.getElementById('input-qtd-manual').value || 1); let cod = txt;
+                if(txt.includes('*')) { qtd = parseFloat(txt.split('*')[0]); cod = txt.split('*')[1]; }
+                if(estoqueCloud[cod]) { addCupom(cod, qtd); document.getElementById('input-qtd-manual').value = "1"; } else { registrarLog("Código não cadastrado: " + cod, "erro"); document.getElementById('codigo-barras').value = ''; }
+            }
+        }
+
+        function navegSugestoesBalanca(e) {
+            const drop = document.getElementById('dropdown-balanca'); const opcoes = drop.querySelectorAll('.opcao-busca');
+            if (drop.style.display === 'block' && opcoes.length > 0) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); if (indiceSelecionadoBalanca < opcoes.length - 1) { if (indiceSelecionadoBalanca >= 0) opcoes[indiceSelecionadoBalanca].classList.remove('selecionada'); indiceSelecionadoBalanca++; opcoes[indiceSelecionadoBalanca].classList.add('selecionada'); opcoes[indiceSelecionadoBalanca].scrollIntoView({ block: 'nearest' }); } } 
+                else if (e.key === 'ArrowUp') { e.preventDefault(); if (indiceSelecionadoBalanca > 0) { opcoes[indiceSelecionadoBalanca].classList.remove('selecionada'); indiceSelecionadoBalanca--; opcoes[indiceSelecionadoBalanca].classList.add('selecionada'); opcoes[indiceSelecionadoBalanca].scrollIntoView({ block: 'nearest' }); } } 
+                else if (e.key === 'Enter' && indiceSelecionadoBalanca >= 0) { e.preventDefault(); addCupomBalanca(listaFiltrada[indiceSelecionadoBalanca]); }
+            }
+        }
+
+        function navegarSugestoesEdicao(e) {
+            const drop = document.getElementById('dropdown-edicao-preco'); const opcoes = drop.querySelectorAll('.opcao-busca');
+            if (drop.style.display === 'block' && opcoes.length > 0) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); if (indiceSelecionadoEdicao < opcoes.length - 1) { if (indiceSelecionadoEdicao >= 0) opcoes[indiceSelecionadoEdicao].classList.remove('selecionada'); indiceSelecionadoEdicao++; opcoes[indiceSelecionadoEdicao].classList.add('selecionada'); opcoes[indiceSelecionadoEdicao].scrollIntoView({ block: 'nearest' }); } } 
+                else if (e.key === 'ArrowUp') { e.preventDefault(); if (indiceSelecionadoEdicao > 0) { opcoes[indiceSelecionadoEdicao].classList.remove('selecionada'); indiceSelecionadoEdicao--; opcoes[indiceSelecionadoEdicao].classList.add('selecionada'); opcoes[indiceSelecionadoEdicao].scrollIntoView({ block: 'nearest' }); } } 
+                else if (e.key === 'Enter' && indiceSelecionadoEdicao >= 0) { e.preventDefault(); selecionarProdutoParaPreco(listaFiltrada[indiceSelecionadoEdicao]); }
+            }
+        }
+
+        function salvarNovoPreco() {
+            let codAntigo = document.getElementById('edit-cod-selecionado').value.trim(); let precoFormatado = parseFloat(document.getElementById('edit-preco').value.replace(',', '.')); let senha = document.getElementById('edit-senha').value;
+            if (!codAntigo || !estoqueCloud[codAntigo]) return alert("Selecione um produto válido!"); if (isNaN(precoFormatado) || precoFormatado <= 0) return alert("Digite um preço válido!"); if (senha !== 'admin123') return alert("Senha do Gerente incorreta!");
+            let nomeOriginal = estoqueCloud[codAntigo].nome;
+            estoqueCloud[codAntigo].preco = precoFormatado; localStorage.setItem('estoque_mercado', JSON.stringify(estoqueCloud));
+            precosModificadosManualmente[codAntigo] = { nome: nomeOriginal, preco: precoFormatado }; localStorage.setItem('precos_modificados', JSON.stringify(precosModificadosManualmente));
+            fecharModalPreco(); forcarSincronizacaoNuvemSilenciosa(); alert(`Sucesso! O produto ${nomeOriginal} foi salvo.`);
+        }
+
+        function addCupom(cod, qtd) {
+            const p = estoqueCloud[cod]; cupomAtual.push({ cod: cod, nome: p.nome, qtd: qtd, unit: p.preco, total: p.preco * qtd });
+            document.getElementById('codigo-barras').value = ''; document.getElementById('dropdown-sugestoes').style.display = 'none';
+            registrarLog(`Adicionado: ${qtd}x ${p.nome}`, 'sucesso'); renderizarCupom(); document.getElementById('codigo-barras').focus();
+        }
+
+        function addCupomBalanca(cod) {
+            let peso = parseFloat(document.getElementById('peso-balanca').value);
+            if (!peso || peso <= 0) { alert("Digite a medida!"); document.getElementById('peso-balanca').focus(); return; }
+            const p = estoqueCloud[cod]; cupomAtual.push({ cod: cod, nome: p.nome, qtd: peso, unit: p.preco, total: p.preco * peso });
+            document.getElementById('peso-balanca').value = ''; document.getElementById('codigo-balanca').value = ''; document.getElementById('dropdown-balanca').style.display = 'none'; document.getElementById('codigo-barras').focus();
+            registrarLog(`Fração inserida: ${peso} de ${p.nome}`, 'sucesso'); renderizarCupom();
+        }
+
+        function removerItem(idx) { cupomAtual.splice(idx, 1); renderizarCupom(); }
+        function cancelarCupom() { if(confirm("Cancelar pedido?")) { cupomAtual = []; renderizarCupom(); registrarLog("Venda Cancelada", "erro"); } }
+
+        function renderizarCupom() {
+            const lista = document.getElementById('lista-cupom'); lista.innerHTML = ''; totalVenda = 0;
+            cupomAtual.forEach((item, i) => {
+                totalVenda += item.total; let unidade = Number.isInteger(item.qtd) ? 'UN' : 'FRC';
+                lista.innerHTML += `<div class="item-cupom"><span>${item.nome}</span><span style="text-align:center">${item.qtd} <span class="badge-unidade">${unidade}</span></span><span style="text-align:right">${item.unit.toFixed(2)}</span><span style="text-align:right; font-weight:bold; color:var(--primaria);">${item.total.toFixed(2)}</span><button class="btn-remover" onclick="removerItem(${i})">❌</button></div>`;
+            });
+            document.getElementById('valor-total').innerText = totalVenda.toFixed(2); calcularTroco();
+        }
+
+        function calcularTroco() {
+            const pago = parseFloat(document.getElementById('valor-pago').value || 0); const box = document.getElementById('box-troco');
+            if(pago >= totalVenda && totalVenda > 0) { box.innerText = `Troco: R$ ${(pago - totalVenda).toFixed(2)}`; box.style.color = '#4ade80'; }
+            else { box.innerText = `Troco: R$ 0.00`; box.style.color = '#38bdf8'; }
+        }
+
+        function formatarMoeda(valor) { return valor.toFixed(2).replace('.', ','); }
+
+        function gerarCupomPDV(formaPagto) {
+            let containerAntigo = document.getElementById('recibo-impressao'); if(containerAntigo) containerAntigo.remove();
+            let dataAtual = new Date().toLocaleString('pt-BR'); let pedidoNumber = Math.floor(Math.random() * 90000) + 10000;
+            let pago = parseFloat(document.getElementById('valor-pago').value || totalVenda); let troco = pago > totalVenda ? pago - totalVenda : 0;
+            
+            let html = `<div id="recibo-impressao"><div class="txt-centro" style="font-size:14px;">COMERCIAL JOÃO</div><div class="txt-centro">MATERIAIS DE CONSTRUÇÃO</div><div class="txt-centro" style="margin-bottom:5px;">${dataAtual} - Pedido ${pedidoNumber}</div><div class="linha-tracejada"></div><div class="flex-space"><span>Qtd Descrição</span><span>Total</span></div><div class="linha-tracejada"></div><div style="margin-bottom:4px;">`;
+            cupomAtual.forEach(i => { let und = Number.isInteger(i.qtd) ? 'UN' : 'MED'; html += `<div style="margin-bottom:4px;"><div>${i.qtd} ${und} x ${i.nome}</div><div class="txt-direita">${formatarMoeda(i.total)}</div></div>`; });
+            html += `</div><div class="linha-tracejada"></div><div class="flex-space" style="font-size:13px; margin-top:5px;"><span>Total a pagar</span><span>R$ ${formatarMoeda(totalVenda)}</span></div><div class="flex-space"><span>${formaPagto}</span><span>R$ ${formatarMoeda(pago)}</span></div><div class="flex-space"><span>VALOR TROCO</span><span>R$ ${formatarMoeda(troco)}</span></div><div style="margin-top:5px;">Operador: ${document.getElementById('caixa-nome-status').innerText}</div><div class="txt-centro" style="margin-top:15px;">Agradecemos a preferência!</div></div>`;
+            let divElement = document.createElement('div'); divElement.innerHTML = html; document.body.appendChild(divElement.firstElementChild);
+        }
+
+        function gerarNFCe(formaPagto) {
+            let containerAntigo = document.getElementById('recibo-impressao'); if(containerAntigo) containerAntigo.remove();
+            let dataStr = new Date().toLocaleDateString('pt-BR'); let horaStr = new Date().toLocaleTimeString('pt-BR');
+            let pago = parseFloat(document.getElementById('valor-pago').value || totalVenda); let troco = pago > totalVenda ? pago - totalVenda : 0;
+            
+            let html = `<div id="recibo-impressao"><div class="txt-centro">COMERCIAL JOÃO - MATERIAIS DE CONSTRUCAO<br>DOCUMENTO AUXILIAR DA NOTA FISCAL DE CONSUMIDOR ELETRÔNICA</div><div class="linha-tracejada"></div><div># Descrição do Item / Qtd Un Vl Unit. Vl Total</div><div class="linha-tracejada"></div><div style="margin-bottom:5px;">`;
+            cupomAtual.forEach((i, index) => {
+                let numItem = String(index + 1).padStart(3, '0'); let und = Number.isInteger(i.qtd) ? 'UN' : 'UN';
+                html += `<div style="margin-bottom:4px;"><div>${numItem} ${i.nome.toUpperCase()}</div><div class="flex-space" style="padding-left:15px;"><span>${i.qtd} ${und} X ${formatarMoeda(i.unit)}</span><span>${formatarMoeda(i.total)}</span></div></div>`;
+            });
+            html += `</div><div class="linha-tracejada"></div><div class="flex-space"><span>QTD. TOTAL DE ITENS</span><span>${String(cupomAtual.length).padStart(3, '0')}</span></div><div class="flex-space"><span>VALOR TOTAL R$</span><span>${formatarMoeda(totalVenda)}</span></div><div class="flex-space"><span>FORMA DE PAGAMENTO</span><span>Valor Pago</span></div><div class="flex-space"><span>${formaPagto}</span><span>R$ ${formatarMoeda(pago)}</span></div><div class="flex-space"><span>VALOR TROCO R$</span><span>R$ ${formatarMoeda(troco)}</span></div><div class="linha-tracejada" style="margin-top:5px;"></div><div class="txt-centro" style="margin-top: 5px;">Consulte pela Chave de Acesso<br><strong>CONSUMIDOR NÃO IDENTIFICADO</strong><br>NFC-e nº 000005702 Série 001 ${dataStr} ${horaStr}</div><div id="qrcode-recibo"></div></div>`;
+            let divElement = document.createElement('div'); divElement.innerHTML = html; document.body.appendChild(divElement.firstElementChild);
+            new QRCode(document.getElementById("qrcode-recibo"), { text: "https://www.fazenda.gov.br", width: 130, height: 130, colorDark: "#000000", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.L });
+        }
+
+        function renderizarTabelaAdm() {
+            const tbody = document.getElementById('tabela-estoque-corpo'); tbody.innerHTML = ''; document.getElementById('contador-produtos').innerText = Object.keys(estoqueCloud).length;
+            let i = 0; for(let cod in estoqueCloud) { if(i > 100) break; tbody.innerHTML += `<tr><td>${cod}</td><td>${estoqueCloud[cod].nome}</td><td>${estoqueCloud[cod].preco.toFixed(2)}</td></tr>`; i++; }
+        }
+
+        async function finalizarVenda(nfce) {
+            if(cupomAtual.length === 0) return alert("Passe os produtos primeiro!");
+            const formaPagto = document.getElementById('forma-pagamento').value;
+            vendasRealizadas.push({ data: new Date().toLocaleString('pt-BR'), total: totalVenda, pagamento: formaPagto });
+            setTimeout(() => { localStorage.setItem('vendas_realizadas', JSON.stringify(vendasRealizadas)); }, 50);
+            atualizarDashboard();
+            if(nfce) { gerarNFCe(formaPagto); setTimeout(() => { window.print(); }, 200); } else { gerarCupomPDV(formaPagto); setTimeout(() => { window.print(); }, 100); }
+            cupomAtual = []; totalVenda = 0; document.getElementById('valor-pago').value = ''; renderizarCupom(); 
+            setTimeout(() => { document.getElementById('input-qtd-manual').focus(); document.getElementById('input-qtd-manual').select(); }, 500);
+        }
+
+        // Banco de Dados Master de Contingência - Estoque Base de Construção
+        const busterProdutosBackup = {
+            "789123456001": {"nome": "CIMENTO CP II 50KG", "preco": 34.90}, 
+            "789123456002": {"nome": "TIJOLO 8 FUROS (MILHEIRO)", "preco": 650.00}, 
+            "789123456003": {"nome": "TUBO PVC ESGOTO 100MM", "preco": 45.50}, 
+            "789123456004": {"nome": "TINTA ACRILICA BRANCA 18L", "preco": 189.90}, 
+            "789123456005": {"nome": "PREGO 18X27 (KG)", "preco": 18.50},
+            "789123456006": {"nome": "ARGAMASSA ACII 20KG", "preco": 22.00},
+            "789123456007": {"nome": "FIO COBRE 2.5MM (METRO)", "preco": 2.50}
+        };
     </script>
 </body>
 </html>
