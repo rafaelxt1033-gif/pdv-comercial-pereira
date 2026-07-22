@@ -19,6 +19,7 @@
             --alerta: #f59e0b;
             --erro: #ef4444;
             --fiscal: #8b5cf6;
+            --whatsapp: #25D366;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -100,6 +101,16 @@
         
         .btn-acao-nuvem { background: var(--sucesso); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-acao-xml { background: var(--fiscal); color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+        /* WIDGET SUPORTE */
+        #suporte-widget { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
+        .btn-suporte-flutuante { background-color: var(--whatsapp); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: transform 0.2s; }
+        .btn-suporte-flutuante:hover { transform: scale(1.05); }
+        #suporte-menu { display: none; position: absolute; bottom: 70px; right: 0; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 240px; padding: 15px; border: 1px solid var(--borda); }
+        .suporte-titulo { margin: 0 0 12px 0; font-size: 14px; font-weight: bold; color: var(--azul-marca); text-align: center; border-bottom: 2px solid var(--borda); padding-bottom: 8px; }
+        .link-suporte { display: flex; align-items: center; text-decoration: none; color: var(--texto-escuro); padding: 10px; margin-bottom: 8px; border-radius: 6px; background: var(--fundo-cinza); font-size: 14px; transition: background 0.2s; border: 1px solid transparent; }
+        .link-suporte:hover { background: #e2e8f0; border-color: var(--borda); }
+        .link-suporte i { color: var(--whatsapp); font-size: 18px; margin-right: 10px; }
 
         @media print {
             body * { visibility: hidden; }
@@ -257,6 +268,29 @@
         </div>
     </div>
 
+    <!-- WIDGET DE SUPORTE TIAGO & MAYCON -->
+    <div id="suporte-widget">
+        <button class="btn-suporte-flutuante" onclick="toggleSuporte()">
+            <i class="fa-brands fa-whatsapp"></i>
+        </button>
+
+        <div id="suporte-menu">
+            <p class="suporte-titulo">Precisa de Ajuda com o PDV?</p>
+
+            <!-- Opção Tiago -->
+            <a href="https://wa.me/5584981549052?text=Olá%20Tiago,%20estou%20com%20uma%20dúvida%20no%20sistema%20do%20João." target="_blank" class="link-suporte">
+                <i class="fa-brands fa-whatsapp"></i>
+                <strong>Suporte Tiago</strong>
+            </a>
+
+            <!-- Opção Maycon -->
+            <a href="https://wa.me/5584994649251?text=Olá%20Maycon,%20estou%20com%20uma%20dúvida%20no%20sistema%20do%20João." target="_blank" class="link-suporte">
+                <i class="fa-brands fa-whatsapp"></i>
+                <strong>Suporte Maycon</strong>
+            </a>
+        </div>
+    </div>
+
     <script>
         // RECUPERAÇÃO DO ESTOQUE DA MEMÓRIA OU CARREGA O PADRÃO
         let bdProdutos = JSON.parse(localStorage.getItem('cp_produtos')) || [
@@ -293,6 +327,12 @@
             });
         };
 
+        // CONTROLE DO WIDGET DE SUPORTE
+        function toggleSuporte() {
+            const menu = document.getElementById('suporte-menu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+
         // LOGIN
         function fazerLogin() {
             const user = document.getElementById('login-user').value.toLowerCase().trim();
@@ -304,7 +344,7 @@
                 document.getElementById('tela-app').classList.add('ativa');
                 document.getElementById('busca-produto').focus();
             } else {
-                alert("Credenciais inválidas. Fale com o João.");
+                alert("Credenciais inválidas. Fale com o suporte técnico.");
             }
         }
 
@@ -481,7 +521,7 @@
             setTimeout(() => window.print(), 100);
         }
 
-        // INTEGRAÇÃO: LÓGICA DE IMPORTAÇÃO DE PLANILHA CSV
+        // LÓGICA DE IMPORTAÇÃO DE PLANILHA CSV
         function processarPlanilha(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -515,11 +555,10 @@
                     }
                 }
 
-                // Salva no cache local imediatamente após a importação
                 localStorage.setItem('cp_produtos', JSON.stringify(bdProdutos));
                 renderizarTabelas();
                 alert(`✅ ${adicionados} produtos importados com sucesso!\nVá na aba GitHub Nuvem para salvar as alterações permanentemente.`);
-                event.target.value = ''; // Limpa o input
+                event.target.value = ''; 
             };
             reader.readAsText(file, 'UTF-8');
         }
