@@ -121,7 +121,7 @@
             </div>
             <div class="input-group">
                 <label>Senha</label>
-                <input type="password" id="login-pass" placeholder="••••••••">
+                <input type="password" id="login-pass" placeholder="••••••••" onkeypress="if(event.key === 'Enter') fazerLogin()">
             </div>
             <button class="btn-login" onclick="fazerLogin()">Acessar Sistema</button>
         </div>
@@ -218,27 +218,39 @@
         </main>
     </div>
 
-    <!-- MODAL PAGAMENTO -->
+    <!-- MODAL PAGAMENTO (COM MÓDULO DE CRÉDITO INTEGRADO) -->
     <div id="modal-pagamento" class="modal-bg">
         <div class="modal-card">
             <h3 id="titulo-modal-pag">Pagamento</h3>
+            
             <label style="font-weight:bold; margin-bottom:5px; display:block;">Forma:</label>
-            <select id="forma-pag" class="metodo-pag">
-                <option>Dinheiro</option><option>PIX</option><option>Cartão de Crédito</option><option>Cartão de Débito</option>
+            <select id="forma-pag" class="metodo-pag" onchange="verificarModoFiado()">
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="PIX">PIX</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Fiado">Fiado (Crediário)</option>
             </select>
-            <div style="text-align: right; margin-top: 15px;"><p>Valor:</p><h2 id="modal-total" style="color:var(--azul-marca);">R$ 0,00</h2></div>
+
+            <!-- MÓDULO DE FIADO (OCULTO POR PADRÃO) -->
+            <div id="area-cliente-fiado" style="display:none; margin-bottom: 15px; padding: 15px; background: #fefce8; border: 1px solid #fde047; border-radius: 4px;">
+                <label style="font-weight:bold; margin-bottom:5px; display:block; color: #854d0e;">Selecionar Cliente:</label>
+                <select id="cliente-fiado" class="metodo-pag" style="border-color: #fde047;" onchange="atualizarLimiteUi()">
+                    <!-- Opções geradas via JS -->
+                </select>
+                <div id="info-limite" style="font-size: 14px; color: var(--erro); font-weight: bold; margin-top: 5px;"></div>
+            </div>
+
+            <div style="text-align: right; margin-top: 15px;"><p>Valor a Pagar:</p><h2 id="modal-total" style="color:var(--azul-marca);">R$ 0,00</h2></div>
             <div class="botoes-modal">
                 <button class="btn-cancelar" onclick="document.getElementById('modal-pagamento').classList.remove('ativa')">Cancelar</button>
-                <button class="btn-confirmar" onclick="concluirVenda()">Confirmar</button>
+                <button class="btn-confirmar" onclick="concluirVenda()">Confirmar Venda</button>
             </div>
         </div>
     </div>
 
     <script>
-        // SANEAMENTO DA BASE DE DADOS
-        // precisao: 0 -> Venda apenas em inteiros (SC, UN)
-        // precisao: 2 -> Duas casas decimais (M³, MT)
-        // precisao: 3 -> Três casas decimais (KG)
+        // SANEAMENTO DA BASE DE DADOS E FRAÇÕES MATEMÁTICAS
         let bdProdutos = [
             { cod: '101', nome: 'Cimento CP II 50kg Votorantim', preco: 35.90, un: 'SC', precisao: 0 },
             { cod: '102', nome: 'Areia Média Lavada', preco: 85.00, un: 'M³', precisao: 2 },
@@ -248,6 +260,13 @@
             { cod: '106', nome: 'Argamassa ACIII 20kg Quartzolit', preco: 28.50, un: 'SC', precisao: 0 },
             { cod: '107', nome: 'Tubo PVC Soldável 25mm (Água Fria)', preco: 4.50, un: 'UN', precisao: 0 },
             { cod: '108', nome: 'Prego 18x27 com cabeça', preco: 18.00, un: 'KG', precisao: 3 }
+        ];
+
+        // MÓDULO DE GESTÃO DE CRÉDITO E LIMITES (FIADO)
+        let bdClientes = JSON.parse(localStorage.getItem('cp_clientes')) || [
+            { id: 1, nome: 'Construtora Alpha', limite: 5000.00, devendo: 0.00 },
+            { id: 2, nome: 'Mestre Roberto (Pedreiro)', limite: 1500.00, devendo: 0.00 },
+            { id: 3, nome: 'Dona Maria (Vizinha)', limite: 300.00, devendo: 0.00 }
         ];
 
         let carrinho = [];
@@ -266,7 +285,7 @@
             });
         };
 
-        // LOGIN DO JOÃO
+        // LOGIN
         function fazerLogin() {
             const user = document.getElementById('login-user').value.toLowerCase().trim();
             const pass = document.getElementById('login-pass').value;
@@ -308,7 +327,6 @@
                 const inputQtd = document.getElementById('sel-qtd');
                 const labelQtd = document.getElementById('label-qtd');
                 
-                // Adapta o campo de digitação com base no rigor matemático da unidade
                 if(prod.precisao > 0) {
                     inputQtd.step = Math.pow(10, -prod.precisao).toString();
                     labelQtd.innerText = `Fração (${prod.un}) - Máx ${prod.precisao} casas`;
@@ -329,85 +347,103 @@
 
             if(isNaN(qtd) || qtd <= 0) return alert('Quantidade inválida!');
             
-            // Validação estrita de casas decimais para bloquear quebras de estoque
             let qtdFormatada = qtd;
             if(produtoTemp.precisao === 0) {
-                if(!Number.isInteger(qtd)) {
-                    return alert(`Erro Logístico: O produto ${produtoTemp.nome} só pode ser vendido em sacos/unidades inteiras!`);
-                }
+                if(!Number.isInteger(qtd)) return alert(`Erro Logístico: Venda apenas em unidades inteiras!`);
             } else {
                 const fator = Math.pow(10, produtoTemp.precisao);
                 qtdFormatada = Math.round(qtd * fator) / fator;
-                
-                if (qtd !== qtdFormatada) {
-                     return alert(`Erro de Precisão: O item ${produtoTemp.nome} permite no máximo ${produtoTemp.precisao} casas decimais para venda.`);
-                }
+                if (qtd !== qtdFormatada) return alert(`Erro de Precisão: Máximo de ${produtoTemp.precisao} casas decimais.`);
             }
 
             const totalItem = qtdFormatada * produtoTemp.preco;
 
-            carrinho.push({
-                cod: produtoTemp.cod,
-                nome: produtoTemp.nome,
-                un: produtoTemp.un,
-                preco: produtoTemp.preco,
-                qtd: qtdFormatada,
-                total: totalItem,
-                precisao: produtoTemp.precisao
-            });
+            carrinho.push({ cod: produtoTemp.cod, nome: produtoTemp.nome, un: produtoTemp.un, preco: produtoTemp.preco, qtd: qtdFormatada, total: totalItem, precisao: produtoTemp.precisao });
 
-            document.getElementById('busca-produto').value = '';
-            document.getElementById('box-selecao').classList.remove('ativo');
-            produtoTemp = null;
-            
-            atualizarCarrinhoUi();
-            document.getElementById('busca-produto').focus();
+            document.getElementById('busca-produto').value = ''; document.getElementById('box-selecao').classList.remove('ativo'); produtoTemp = null;
+            atualizarCarrinhoUi(); document.getElementById('busca-produto').focus();
         }
 
         function removerItem(idx) { carrinho.splice(idx, 1); atualizarCarrinhoUi(); }
 
         function atualizarCarrinhoUi() {
-            const lista = document.getElementById('lista-carrinho');
-            lista.innerHTML = '';
+            const lista = document.getElementById('lista-carrinho'); lista.innerHTML = '';
             let somaTotal = 0;
-
             carrinho.forEach((item, index) => {
                 somaTotal += item.total;
-                
-                // Formata a exibição garantindo as casas decimais exatas da grandeza
                 let txtQtd = item.qtd.toFixed(item.precisao);
-
-                lista.innerHTML += `
-                    <div class="item-carrinho">
-                        <div class="detalhes">
-                            <strong>${item.nome}</strong>
-                            <small>${txtQtd} ${item.un} x ${formatarMoeda(item.preco)}</small>
-                        </div>
-                        <div class="valor" style="font-weight:bold;">${formatarMoeda(item.total)}</div>
-                        <button class="btn-remover" onclick="removerItem(${index})"><i class="fa-solid fa-trash"></i></button>
-                    </div>
-                `;
+                lista.innerHTML += `<div class="item-carrinho">
+                    <div class="detalhes"><strong>${item.nome}</strong><br><small>${txtQtd} ${item.un} x ${formatarMoeda(item.preco)}</small></div>
+                    <div class="valor" style="font-weight:bold;">${formatarMoeda(item.total)}</div>
+                    <button class="btn-remover" onclick="removerItem(${index})"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
             });
-
             document.getElementById('total-venda').innerText = formatarMoeda(somaTotal);
         }
 
-        // FECHAMENTO E NOTAS
+        // LÓGICA DO MODAL DE PAGAMENTO E FIADO
         function prepararPagamento(isFiscal) {
             if(carrinho.length === 0) return alert("Carrinho Vazio!");
             tipoVendaAtualIsFiscal = isFiscal;
             document.getElementById('titulo-modal-pag').innerText = isFiscal ? "Emitir NFC-e" : "Emitir Nota Livre";
             document.getElementById('titulo-modal-pag').style.color = isFiscal ? "var(--fiscal)" : "var(--azul-marca)";
             document.getElementById('modal-total').innerText = document.getElementById('total-venda').innerText;
+            document.getElementById('forma-pag').value = 'Dinheiro'; // Reseta o select
+            verificarModoFiado(); // Força a checagem da interface
             document.getElementById('modal-pagamento').classList.add('ativa');
         }
 
+        function verificarModoFiado() {
+            const forma = document.getElementById('forma-pag').value;
+            const areaFiado = document.getElementById('area-cliente-fiado');
+            if(forma === 'Fiado') {
+                areaFiado.style.display = 'block';
+                const select = document.getElementById('cliente-fiado');
+                select.innerHTML = '<option value="">Selecione o Cliente...</option>';
+                bdClientes.forEach(c => { select.innerHTML += `<option value="${c.id}">${c.nome}</option>`; });
+                document.getElementById('info-limite').innerText = '';
+            } else {
+                areaFiado.style.display = 'none';
+            }
+        }
+
+        function atualizarLimiteUi() {
+            const id = parseInt(document.getElementById('cliente-fiado').value);
+            if(!id) return;
+            const c = bdClientes.find(x => x.id === id);
+            const disponivel = c.limite - c.devendo;
+            document.getElementById('info-limite').innerText = `Limite Disponível: ${formatarMoeda(disponivel)}`;
+            document.getElementById('info-limite').style.color = disponivel >= 0 ? "var(--sucesso)" : "var(--erro)";
+        }
+
         function concluirVenda() {
+            const formaPag = document.getElementById('forma-pag').value;
             const total = carrinho.reduce((a, c) => a + c.total, 0);
+            let nomeClienteFiado = null;
+
+            // VALIDAÇÃO DE RISCO: MÓDULO DE FIADO
+            if(formaPag === 'Fiado') {
+                const idCliente = parseInt(document.getElementById('cliente-fiado').value);
+                if(!idCliente) return alert("Erro: Selecione um cliente cadastrado para vender no crediário.");
+                
+                const cliente = bdClientes.find(x => x.id === idCliente);
+                const disponivel = cliente.limite - cliente.devendo;
+                
+                if(total > disponivel) {
+                    return alert(`BLOQUEIO DE CRÉDITO: A venda excede o limite disponível de ${formatarMoeda(disponivel)} do cliente ${cliente.nome}.`);
+                }
+                
+                // Aprovação e atualização de dívida
+                cliente.devendo += total;
+                nomeClienteFiado = cliente.nome;
+                localStorage.setItem('cp_clientes', JSON.stringify(bdClientes));
+            }
+
+            // GERAÇÃO DO PEDIDO
             const venda = {
                 id: Math.floor(Math.random() * 90000) + 10000,
                 data: new Date().toLocaleString('pt-BR'),
-                pagamento: document.getElementById('forma-pag').value,
+                pagamento: formaPag === 'Fiado' ? `Fiado (${nomeClienteFiado})` : formaPag,
                 valor: total,
                 fiscal: tipoVendaAtualIsFiscal,
                 itens: [...carrinho]
@@ -420,6 +456,8 @@
             carrinho = []; atualizarCarrinhoUi();
             document.getElementById('modal-pagamento').classList.remove('ativa');
             renderizarTabelas();
+            
+            // PROTOCOLO DE SINCRONIZAÇÃO AUTOMÁTICA
             sincronizarGitHubSilencioso();
         }
 
@@ -447,7 +485,6 @@
             setTimeout(() => window.print(), 100);
         }
 
-        // XML EXPORT
         function baixarXMLFiscal() {
             const notasFiscais = historicoVendas.filter(v => v.fiscal);
             if(notasFiscais.length === 0) return alert("Nenhuma NFC-e gerada!");
@@ -465,16 +502,13 @@
             link.click();
         }
 
-        // TABELAS E NUVEM
         function renderizarTabelas() {
-            // Produtos
             const tbProd = document.getElementById('tabela-produtos-admin'); tbProd.innerHTML = '';
             bdProdutos.forEach(p => {
                 const txtFracao = p.precisao === 0 ? 'Inteiro' : `${p.precisao} Casas Dec.`;
                 tbProd.innerHTML += `<tr><td>${p.cod}</td><td>${p.nome}</td><td>${txtFracao}</td><td>${formatarMoeda(p.preco)}</td></tr>`;
             });
 
-            // Vendas
             const tbVend = document.getElementById('tabela-vendas'); tbVend.innerHTML = '';
             [...historicoVendas].reverse().forEach(v => {
                 let badge = v.fiscal ? `<span class="badge-fiscal">NFC-e</span>` : `<span class="badge-livre">Livre</span>`;
@@ -489,6 +523,7 @@
             alert("Credenciais GitHub do João salvas!");
         }
 
+        // PROTOCOLO DE SINCRONIZAÇÃO AUTOMATED SYNC (GIT PUSH VIA API)
         async function sincronizarGitHubSilencioso() {
             const repo = localStorage.getItem('gh_repo'); const token = localStorage.getItem('gh_token');
             if(!repo || !token) return;
@@ -497,15 +532,22 @@
                 let res = await fetch(url, { headers: { "Authorization": `token ${token}` } });
                 let sha = res.ok ? (await res.json()).sha : "";
                 
+                // O pacote consolidado envia todo o ecossistema atualizado (Produtos, Vendas e Clientes)
+                let pacoteConsolidado = {
+                    estoque: bdProdutos,
+                    vendas: historicoVendas,
+                    carteira_clientes: bdClientes
+                };
+
                 let body = { 
-                    message: "Sync Vendas Automática", 
-                    content: btoa(JSON.stringify({ produtos: bdProdutos, vendas: historicoVendas })),
+                    message: "Sync Automática de Retaguarda (Vendas e Crédito)", 
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(pacoteConsolidado, null, 2)))),
                     branch: "main"
                 };
                 if(sha) body.sha = sha;
                 
                 await fetch(url, { method: "PUT", headers: { "Authorization": `token ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-            } catch(e) { console.log("Erro sync nuvem"); }
+            } catch(e) { console.log("Aviso: Sincronização em nuvem falhou."); }
         }
     </script>
 </body>
