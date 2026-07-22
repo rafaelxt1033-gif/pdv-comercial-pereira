@@ -182,7 +182,7 @@
             <div id="view-produtos" class="conteudo-view">
                 <h2>Gestão de Produtos</h2>
                 <table class="tabela-admin">
-                    <thead><tr><th>Código</th><th>Produto</th><th>Fração</th><th>Preço</th></tr></thead>
+                    <thead><tr><th>Código</th><th>Produto</th><th>Precisão Decimal</th><th>Preço</th></tr></thead>
                     <tbody id="tabela-produtos-admin"></tbody>
                 </table>
             </div>
@@ -235,13 +235,19 @@
     </div>
 
     <script>
-        // BANCO DE DADOS INICIAL
+        // SANEAMENTO DA BASE DE DADOS
+        // precisao: 0 -> Venda apenas em inteiros (SC, UN)
+        // precisao: 2 -> Duas casas decimais (M³, MT)
+        // precisao: 3 -> Três casas decimais (KG)
         let bdProdutos = [
-            { cod: '101', nome: 'Cimento CP II 50kg', preco: 35.90, fracionado: false, un: 'SC' },
-            { cod: '102', nome: 'Areia Média Lavada', preco: 85.00, fracionado: true, un: 'M³' },
-            { cod: '103', nome: 'Brita Número 1', preco: 90.00, fracionado: true, un: 'M³' },
-            { cod: '104', nome: 'Tijolo Cerâmico 8 Furos', preco: 0.65, fracionado: false, un: 'UN' },
-            { cod: '105', nome: 'Fio Flexível 2.5mm', preco: 1.80, fracionado: true, un: 'MT' }
+            { cod: '101', nome: 'Cimento CP II 50kg Votorantim', preco: 35.90, un: 'SC', precisao: 0 },
+            { cod: '102', nome: 'Areia Média Lavada', preco: 85.00, un: 'M³', precisao: 2 },
+            { cod: '103', nome: 'Brita Número 1', preco: 90.00, un: 'M³', precisao: 2 },
+            { cod: '104', nome: 'Tijolo Cerâmico 8 Furos', preco: 0.65, un: 'UN', precisao: 0 },
+            { cod: '105', nome: 'Fio Elétrico Flexível 2.5mm (Sil)', preco: 1.80, un: 'MT', precisao: 2 },
+            { cod: '106', nome: 'Argamassa ACIII 20kg Quartzolit', preco: 28.50, un: 'SC', precisao: 0 },
+            { cod: '107', nome: 'Tubo PVC Soldável 25mm (Água Fria)', preco: 4.50, un: 'UN', precisao: 0 },
+            { cod: '108', nome: 'Prego 18x27 com cabeça', preco: 18.00, un: 'KG', precisao: 3 }
         ];
 
         let carrinho = [];
@@ -298,39 +304,92 @@
                 produtoTemp = prod; box.classList.add('ativo');
                 document.getElementById('sel-nome').innerText = `${prod.cod} - ${prod.nome}`;
                 document.getElementById('sel-preco').value = formatarMoeda(prod.preco);
-                document.getElementById('sel-qtd').step = prod.fracionado ? "0.01" : "1";
-                document.getElementById('label-qtd').innerText = prod.fracionado ? `Fração (${prod.un})` : `Qtd (${prod.un})`;
-                document.getElementById('sel-qtd').value = "1";
+                
+                const inputQtd = document.getElementById('sel-qtd');
+                const labelQtd = document.getElementById('label-qtd');
+                
+                // Adapta o campo de digitação com base no rigor matemático da unidade
+                if(prod.precisao > 0) {
+                    inputQtd.step = Math.pow(10, -prod.precisao).toString();
+                    labelQtd.innerText = `Fração (${prod.un}) - Máx ${prod.precisao} casas`;
+                } else {
+                    inputQtd.step = "1";
+                    labelQtd.innerText = `Quantidade (${prod.un}) - Apenas Inteiros`;
+                }
+                
+                inputQtd.value = "1";
             }
         }
 
         function adicionarAoCarrinho() {
             if(!produtoTemp) return;
-            let qtd = parseFloat(document.getElementById('sel-qtd').value);
-            if(isNaN(qtd) || qtd <= 0) return;
-            if(!produtoTemp.fracionado && !Number.isInteger(qtd)) return alert("Venda apenas em inteiros!");
             
-            carrinho.push({ ...produtoTemp, qtd: qtd, total: qtd * produtoTemp.preco });
+            const qtdInput = document.getElementById('sel-qtd').value;
+            let qtd = parseFloat(qtdInput);
+
+            if(isNaN(qtd) || qtd <= 0) return alert('Quantidade inválida!');
+            
+            // Validação estrita de casas decimais para bloquear quebras de estoque
+            let qtdFormatada = qtd;
+            if(produtoTemp.precisao === 0) {
+                if(!Number.isInteger(qtd)) {
+                    return alert(`Erro Logístico: O produto ${produtoTemp.nome} só pode ser vendido em sacos/unidades inteiras!`);
+                }
+            } else {
+                const fator = Math.pow(10, produtoTemp.precisao);
+                qtdFormatada = Math.round(qtd * fator) / fator;
+                
+                if (qtd !== qtdFormatada) {
+                     return alert(`Erro de Precisão: O item ${produtoTemp.nome} permite no máximo ${produtoTemp.precisao} casas decimais para venda.`);
+                }
+            }
+
+            const totalItem = qtdFormatada * produtoTemp.preco;
+
+            carrinho.push({
+                cod: produtoTemp.cod,
+                nome: produtoTemp.nome,
+                un: produtoTemp.un,
+                preco: produtoTemp.preco,
+                qtd: qtdFormatada,
+                total: totalItem,
+                precisao: produtoTemp.precisao
+            });
+
             document.getElementById('busca-produto').value = '';
             document.getElementById('box-selecao').classList.remove('ativo');
-            produtoTemp = null; atualizarCarrinhoUi();
+            produtoTemp = null;
+            
+            atualizarCarrinhoUi();
             document.getElementById('busca-produto').focus();
         }
 
         function removerItem(idx) { carrinho.splice(idx, 1); atualizarCarrinhoUi(); }
 
         function atualizarCarrinhoUi() {
-            const lista = document.getElementById('lista-carrinho'); lista.innerHTML = '';
-            let soma = 0;
-            carrinho.forEach((i, idx) => {
-                soma += i.total;
-                lista.innerHTML += `<div class="item-carrinho">
-                    <div><strong>${i.nome}</strong><br><small>${i.qtd} ${i.un} x ${formatarMoeda(i.preco)}</small></div>
-                    <div style="font-weight:bold;">${formatarMoeda(i.total)}</div>
-                    <button class="btn-remover" onclick="removerItem(${idx})"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
+            const lista = document.getElementById('lista-carrinho');
+            lista.innerHTML = '';
+            let somaTotal = 0;
+
+            carrinho.forEach((item, index) => {
+                somaTotal += item.total;
+                
+                // Formata a exibição garantindo as casas decimais exatas da grandeza
+                let txtQtd = item.qtd.toFixed(item.precisao);
+
+                lista.innerHTML += `
+                    <div class="item-carrinho">
+                        <div class="detalhes">
+                            <strong>${item.nome}</strong>
+                            <small>${txtQtd} ${item.un} x ${formatarMoeda(item.preco)}</small>
+                        </div>
+                        <div class="valor" style="font-weight:bold;">${formatarMoeda(item.total)}</div>
+                        <button class="btn-remover" onclick="removerItem(${index})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
             });
-            document.getElementById('total-venda').innerText = formatarMoeda(soma);
+
+            document.getElementById('total-venda').innerText = formatarMoeda(somaTotal);
         }
 
         // FECHAMENTO E NOTAS
@@ -374,7 +433,8 @@
                 <div style="border-top:1px dashed #000; margin:5px 0;"></div>`;
                 
             venda.itens.forEach(i => {
-                html += `<div>${i.qtd}${i.un} x ${i.nome} - ${formatarMoeda(i.total)}</div>`;
+                let txtQtd = i.qtd.toFixed(i.precisao);
+                html += `<div>${txtQtd}${i.un} x ${i.nome} - ${formatarMoeda(i.total)}</div>`;
             });
             
             html += `<div style="border-top:1px dashed #000; margin:5px 0;"></div>
@@ -410,7 +470,8 @@
             // Produtos
             const tbProd = document.getElementById('tabela-produtos-admin'); tbProd.innerHTML = '';
             bdProdutos.forEach(p => {
-                tbProd.innerHTML += `<tr><td>${p.cod}</td><td>${p.nome}</td><td>${p.fracionado ? 'Fracionado' : 'Inteiro'}</td><td>${formatarMoeda(p.preco)}</td></tr>`;
+                const txtFracao = p.precisao === 0 ? 'Inteiro' : `${p.precisao} Casas Dec.`;
+                tbProd.innerHTML += `<tr><td>${p.cod}</td><td>${p.nome}</td><td>${txtFracao}</td><td>${formatarMoeda(p.preco)}</td></tr>`;
             });
 
             // Vendas
